@@ -207,5 +207,6 @@ ig-carousel/
 ├── templates/
 │   └── carousel-config.md        ← `.carousel.md` template for new projects
 └── commands/
-    └── init-carousel.md          ← procedure to generate `.carousel.md` from DESIGN.md
+    ├── init-carousel.md          ← procedure to generate `.carousel.md` from DESIGN.md
+    └── sync-carousel.md          ← detect + fix drift between `.carousel.md` and DESIGN.md
 ```
