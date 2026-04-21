@@ -103,7 +103,20 @@ If a brand defines fewer or more zones in `.carousel.md`, render accordingly.
 
 ### Emphasis Pattern
 
-Resolve `layout.emphasis.style` from `.carousel.md`. The signature is 1-3 emphasized key words per headline inside `<em>` tags. Emphasis colors live on each theme (`theme.emphasis`), not in a separate lookup.
+Resolve `layout.emphasis.style` from `.carousel.md`. Emphasis colors live on each theme (`theme.emphasis`), not in a separate lookup.
+
+**Emphasis is earned, not required.** Only wrap a word or phrase in `<em>` when it is the *payload* of the sentence — a specific number, proper noun, twist word, or claim that lands differently without the emphasis.
+
+**The earned test:** remove the `<em>`. If the sentence still works the same way, drop it. If the sentence loses its punch, keep it.
+
+**Distribution across a 6-slide carousel:**
+- **Hook slide (slide 1)** — almost always earns emphasis. The twist word is the payload.
+- **Proof / reveal / stat slides** — usually earn emphasis. The specific number, name, or term is the payload.
+- **Argument slides** — usually do NOT earn emphasis. The whole sentence is the point; italicizing a phrase inside it dilutes the argument.
+- **CTA slide** — earns emphasis only when a specific action word or keyword is the payload (e.g. a comment keyword). Share prompts often don't need it.
+- **Expected count:** 2-4 slides with emphasis out of 6. Never zero (hook earns at least one); never all six (the pattern becomes decoration and loses its meaning).
+
+If you find yourself adding `<em>` just because a slide "looks bare" without it, that's the AI-slop signal — drop it.
 
 **Write `<em>` with no class.** Let CSS cascade from the parent `.slide--{role}` do the work:
 

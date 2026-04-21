@@ -2,6 +2,8 @@
 
 The hook is everything. If slide 1 doesn't stop the scroll, slides 2-6 don't exist.
 
+> **Scope:** this file governs the hook slide (slide 1). Hooks almost always earn emphasis — the twist word is the payload. For emphasis rules on *non-hook* slides, see `SKILL.md` Step 5 "Emphasis Pattern" — emphasis is earned, not required.
+
 ## Hook Format
 
 - Use the `anchor` role theme (highest-contrast brand surface).
