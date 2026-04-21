@@ -138,6 +138,23 @@ layout:
     - list       # struck-through list (tools, options)
     - pill       # CTA pill (most common on last slide)
     - bullets    # stacked bullet points
+
+# =====================================================================
+# CAPTION — every carousel ships with a caption generated alongside
+# the slides. The core rule: the first ~125 chars must earn the
+# reader's "... more" tap. See references/caption-writing.md.
+# =====================================================================
+caption:
+  enabled: true
+  hook_target_length: 80            # chars — aim well below the 125 truncation cliff
+  body_length: medium               # short (100-150w) | medium (200-300w) | long (400-500w)
+  engagement_style: auto            # auto (match carousel action) | question | share | save | controversial
+  hashtag_count: 12
+  hashtag_placement: caption        # caption | first-comment
+  hashtag_pools:
+    brand: []                       # always included (1-3 tags)
+    topic: []                       # skill adds content-relevant tags (5-8)
+    reach: []                       # broad discoverability tags (2-4)
 ---
 
 # Notes (free-form, optional)

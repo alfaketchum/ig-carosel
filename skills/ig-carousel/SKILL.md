@@ -176,9 +176,27 @@ When changing slide count, update:
 - Number of `<button class="dot">` elements
 - ARIA labels (`Slide N of M`)
 
-## Step 7: Export Slide Images
+## Step 7: Write the Caption
 
-After generating the HTML carousel, export each slide as a high-quality PNG for uploading to Postiz or any social media manager.
+If `caption.enabled: true` in `.carousel.md`, generate a caption alongside the slides. The caption is a first-class deliverable — without it, the carousel can't be posted.
+
+→ See `references/caption-writing.md` for the full rules. The central principle: **the first ~125 characters must earn the reader's "... more" tap.** Everything else is secondary.
+
+**Process:**
+1. Load `references/caption-writing.md`.
+2. Draft a first line using one of the six opening patterns (story opener / counter-intuitive / specific intrigue / confession / specific observation / question-then-negated). Target `caption.hook_target_length` chars (default 80).
+3. Run the earned test: would a creator friend ask "what's this about?" if you sent them just the first line? If not, rewrite.
+4. Write the body (length per `caption.body_length`): deliver the hook's payoff → add context the slides couldn't fit → bridge to "why this matters for the reader."
+5. Add the engagement prompt. Match to the carousel's selected CTA action (`caption.engagement_style: auto` resolves to the action chosen in Step 6). No generic "let me know what you think!"
+6. Pull hashtags from `caption.hashtag_pools` (brand + topic + reach), mix per strategy, cap at `caption.hashtag_count`. Topic hashtags are skill-selected based on this carousel's content.
+7. Verify: total caption ≤ 2,200 chars, first ~125 chars stand alone, no anti-patterns (no greetings, no opening hashtags, no duplicating the slide 1 hook verbatim).
+8. Write to `{layout.output_dir}/YYMMDD-topic-slug/caption.md`.
+
+The caption.md lives alongside the HTML and (once exported) the PNGs. Human-readable — the user can edit before publishing.
+
+## Step 8: Export Slide Images
+
+After generating the HTML carousel and caption, export each slide as a high-quality PNG for uploading to Postiz or any social media manager.
 
 **Folder naming:** `{layout.output_dir}/YYMMDD-topic-slug/` (e.g. `ig-carousel/260409-nikki-glaser-confession/`)
 
@@ -195,7 +213,7 @@ After generating the HTML carousel, export each slide as a high-quality PNG for 
 - [ ] Fonts loaded (headline, body, mono)
 - [ ] CSS variables use the project's actual colors
 - [ ] Slides use `aspect-ratio: 1080/1350` with `scroll-snap-align: start`
-- [ ] Every headline has italic `<em>` emphasis in contrasting color
+- [ ] Emphasis earned, not required — 2-4 of 6 slides have `<em>`, never all six
 - [ ] Labels are uppercase via CSS `text-transform`
 - [ ] Dot count matches slide count
 - [ ] IG header shows correct `{brand.name}` username
@@ -203,6 +221,7 @@ After generating the HTML carousel, export each slide as a high-quality PNG for 
 - [ ] ARIA: carousel region, slide groups, arrow labels, dot labels
 - [ ] Responsive: full-bleed at <500px, padded + rounded at 501px+
 - [ ] Last slide has a CTA (pill or text) driven by the selected action
+- [ ] `caption.md` generated — first ~125 chars earn the expand tap; hashtags at end
 - [ ] Slide images exported to `{layout.output_dir}/YYMMDD-topic-slug/` via export script
 - [ ] Slide 1 and last slide verified visually
 
@@ -211,15 +230,18 @@ After generating the HTML carousel, export each slide as a high-quality PNG for 
 ```
 ig-carousel/
 ├── SKILL.md                      ← this file (construction only)
-├── HANDOFF.md                    ← original refactor spec
+├── HANDOFF.md                    ← status + open handoffs
 ├── references/
 │   ├── strategy-selection.md     ← strategy table + Specificity Rule
 │   ├── hook-formulas.md          ← hook format, psychology, rules, formulas by strategy
 │   ├── structural-narratives.md  ← slide-by-slide arcs per strategy
-│   └── action-playbooks.md       ← CTA slide playbooks per action type
+│   ├── action-playbooks.md       ← CTA slide playbooks per action type
+│   └── caption-writing.md        ← IG caption craft — earn the "...more" tap
 ├── templates/
 │   └── carousel-config.md        ← `.carousel.md` template for new projects
-└── commands/
-    ├── init-carousel.md          ← procedure to generate `.carousel.md` from DESIGN.md
-    └── sync-carousel.md          ← detect + fix drift between `.carousel.md` and DESIGN.md
+├── commands/
+│   ├── init-carousel.md          ← procedure to generate `.carousel.md` from DESIGN.md
+│   └── sync-carousel.md          ← detect + fix drift between `.carousel.md` and DESIGN.md
+└── handoffs/
+    └── image-generation.md       ← open handoff for image/chart slide support
 ```
