@@ -1,180 +1,108 @@
 ---
-status: open
-created: 2026-04-19
+status: active
+updated: 2026-04-21
 owner: AJ
 ---
 
-# Handoff: Separate Psychology from Construction + Make `ig-carousel` Extensible
+# ig-carousel — Status & Open Handoffs
 
-## The problems
+This doc tracks what's shipped, what's open, and lingering questions. It replaces the original refactor spec (which was completed on 2026-04-21 — see git history for the prior version).
 
-**Problem 1 — Psychology is tangled with construction.** `SKILL.md` blends two distinct concerns:
+## Completed (2026-04-21 session)
 
-1. **Psychology / copywriting strategy** — strategy selection, hook framing (Fear > Positive), conversational tone, the conversation test, hook formulas by strategy, action playbooks, "Common Structures" narratives.
-2. **Construction mechanics** — typography scale, color system, emphasis pattern, slide anatomy, IG frame markup, export process.
+The original handoff goal — **separate psychology from construction + make the skill extensible for any brand** — is done.
 
-These don't belong in the same document. Psychology is **content strategy** (what to say, how to frame it, why it works). Construction is **skill scaffolding** (how to build the HTML carousel, what tokens to plug in, where things go on the slide).
+**Architecture shipped:**
+- `SKILL.md` — lean construction manual, brand-agnostic. No hardcoded brand values.
+- `references/` — psychology relocated verbatim from the monolithic SKILL.md:
+  - `strategy-selection.md` — 13 strategies + Specificity Rule
+  - `hook-formulas.md` — Fear > Positive, conversation test, hook rules 1-7
+  - `structural-narratives.md` — slide-by-slide arcs per strategy
+  - `action-playbooks.md` — 6 CTA playbooks (Comment/Share/Save/Controversy/Tag/Product)
+- `templates/carousel-config.md` — the `.carousel.md` template for new projects
+- `commands/init-carousel.md` — bootstrap `.carousel.md` from a project's DESIGN.md
+- `commands/sync-carousel.md` — drift detection + auto-fix between DESIGN.md and `.carousel.md`
+- `agents/ig-carousel.md` — empty stub (see lingering Q #1)
 
-**Problem 2 — The skill is LoopLinq-specific; it should be extensible.** The skill currently assumes LoopLinq's brand — it references `looplinq.com` in CTAs, the LoopLinq logo in the IG avatar, LoopLinq's design tokens, and LoopLinq's product context. Any other brand trying to use it has to fork and hand-edit. The skill should be **brand-agnostic** — brand-specific details get resolved at run time from a project config file, not baked into the skill itself.
+**Config architecture:**
+- Three-tier: `DESIGN.md` (brand foundation, humans read) → `.carousel.md` (skill-readable bridge, per-project) → `SKILL.md` (universal recipe)
+- Looplinq's `.carousel.md` lives at the Looplinq repo root — added in commit `03f89d7`
 
-## Reference implementation
+**Extras beyond the original refactor scope:**
+- **Role-based themes.** Narratives reference `anchor` / `body` / `alt` instead of literal theme names (`slide--primary`/`dark`/`white`). Brands can rename theme keys without breaking references.
+- **Classless `<em>`.** Color + style cascades from `.slide--{role}`. No `em.primary` / `em.white` class coupling.
+- **Emphasis style as config.** `layout.emphasis.style` accepts `italic` / `bold` / `italic-underline` / `highlight` / `italic+highlight`. Brands can use highlighter effects instead of italics.
 
-A more extensible version of this skill already exists at `C:\Users\AJ\Dev\carousel-skill`. Study its architecture before refactoring:
+**Commits:**
+- `36daf6b` — initial commit (scaffold)
+- `9461e50` — /sync-carousel added
+
+---
+
+## Current file tree
 
 ```
-C:\Users\AJ\Dev\carousel-skill\
-├── package.json             # npm-installable skill
-├── bin/install.mjs          # installer
-├── skills/carousel/SKILL.md # the skill entry point — brand-agnostic
-├── commands/                # /brand, /carousel, /export, /hook, /roast-carousel, /series, /swipe-test, /template
-├── agents/carousel.md       # carousel agent
-├── references/              # on-demand knowledge files:
-│   ├── anti-patterns.md
-│   ├── brand-consistency.md
-│   ├── carousel-anatomy.md       ← pure construction (header/body/footer/logo)
-│   ├── color-psychology.md
-│   ├── cta-patterns.md
-│   ├── data-slides.md
-│   ├── export-formats.md
-│   ├── platform-specs.md         ← IG / LinkedIn / TikTok dimensions
-│   ├── social-typography.md      ← pure construction (type scale for social)
-│   ├── strategy-selection.md     ← pure psychology
-│   └── style-presets.md
-├── templates/carousel-config.md  # the .carousel.md template
-├── checklists/pre-ship.md
-└── autoresearch/evaluate.sh
+carousel-skill/skills/ig-carousel/
+├── SKILL.md                            ← construction manual, brand-agnostic
+├── HANDOFF.md                          ← this file (status + open items)
+├── references/
+│   ├── strategy-selection.md
+│   ├── hook-formulas.md
+│   ├── structural-narratives.md
+│   └── action-playbooks.md
+├── templates/
+│   └── carousel-config.md
+├── commands/
+│   ├── init-carousel.md
+│   └── sync-carousel.md
+├── handoffs/
+│   └── image-generation.md             ← open
+└── agents/ig-carousel.md               ← stub (see below)
 ```
 
-**Key extensibility pattern — `.carousel.md` config file** (like `.picasso.md`):
+---
 
-- Lives in the project root, not in the skill.
-- Holds all brand-specific settings: name, voice, audience, fonts, colors, aspect ratio, hook style, preset, platform, export format.
-- Auto-generated on first run via discovery mode (skill asks 4 questions if no config exists).
-- The skill reads this config at run time instead of hardcoding any brand.
+## Open handoffs
 
-**Key extensibility pattern — reference loading on demand.** The SKILL.md is lean; heavy content lives in `references/*.md` and is pulled in only when relevant to the current task. Construction refs vs strategy refs are already separated in that structure — use it as the model.
+### [image-generation.md](handoffs/image-generation.md)
 
-## The goal
+Image support (screenshots, photos, charts) was scoped and designed this session but NOT built. Final plan is an MVP (`images.enabled: true/false` + user-provided paths in prompt, ~2-3 files). Full design discussion (slide_types, modes, sources, content inference) is preserved in the handoff for when real usage reveals what's actually needed.
 
-Refactor `looplinq/.claude/skills/ig-carousel/` to match the `carousel-skill` architecture:
+**Priority: low.** Use the skill in practice first. Let pain points drive the design.
 
-1. **Brand-agnostic SKILL.md** — no hardcoded LoopLinq references. All brand tokens come from a config file.
-2. **Split psychology and construction** — psychology lives in `references/strategy-selection.md` (or equivalent), construction mechanics live in SKILL.md + `references/carousel-anatomy.md` + `references/social-typography.md`.
-3. **Config-driven** — introduce a `.carousel.md` (or reuse `DESIGN.md` + a new `.carousel.md`) that LoopLinq's project populates. Other projects populate their own.
+---
 
-**Rule:** nothing in `SKILL.md` should assume what the content is, who the audience is, what brand is publishing, or what frame to use. Those decisions happen *before* the skill runs, via config or explicit input.
+## Lingering questions (no handoff, just open)
 
-## The goal
+1. **Agent layer — build, delete, or leave as stub?** `agents/ig-carousel.md` is currently empty. Picasso's agent does two things the carousel skill doesn't: gallery-driven discovery (6 preview layouts → user reacts) and visual validation (screenshot audits after generation). Both are plausible future features. Neither is urgent. Defer until there's a real pain point — or delete the stub to remove dead code.
 
-Split them cleanly. `SKILL.md` should be a **pure construction manual** — the recipe for assembling an IG carousel from any content. Psychology moves elsewhere (separate doc, separate skill, or into the user's prompt as input).
+2. **Export script location.** `ig-carousel/export-slides.mjs` lives in each brand's project repo. When export logic changes (new aspect, bug fix, retina tweaks), every brand has to update their copy. Moving it to `carousel-skill/bin/export-slides.mjs` eliminates drift but requires brands to reference it by path. Low priority until drift actually happens.
 
-**Rule:** nothing in `SKILL.md` should assume what the content is, who the audience is, or what frame to use. Those decisions happen *before* the skill runs.
+3. **Reference HTML template.** The old skill relied on `ig-carousel/index.html` as a template in each brand's repo. We removed the dependency but didn't replace it with a skill-side template. Each generation writes HTML from scratch based on SKILL.md instructions. Pro: flexible, no template maintenance. Con: potential inconsistency across generations. Unknown impact without real usage data.
 
-## What stays in `SKILL.md` (construction only)
+4. **Silent pre-flight sync.** `/sync-carousel` is user-triggered. Should the main build flow run it silently before generating a carousel, warning if drift exists? Or is manual enough?
 
-- **Design token resolution** — finding `DESIGN.md`, extracting colors/fonts/logo SVG.
-- **Typography scale** — headline, label, body, list, CTA pill sizing and weights.
-- **Color switching on text** — emphasis pattern (`<em class="primary">`, `<em class="white">`), which color on which background.
-- **Layout structure** — the 3-zone slide anatomy (label → headline → bottom), plus the IG frame shell:
-  - **Header:** avatar (logo SVG, white variant on gradient), username, location line, `···` more button.
-  - **Body:** the slide viewport with scroll-snap, aspect-ratio 1080/1350, 3-zone vertical rhythm.
-  - **Footer:** dots + arrows + IG action row.
-  - **Logo:** where the brand mark goes in the avatar, fallback to gradient circle if no SVG.
-- **Background images** — how to apply a full-bleed image to a slide, overlay gradients for text legibility, per-slide background variants (`slide--image`, `slide--image-dark`, etc.).
-- **Image generation / sourcing** — pulling images via Nano Banana (or any image gen), image prompts tied to slide content, acceptable sources, how to place them (cover vs inset vs decorative).
-- **Slide variants** — `slide--dark`, `slide--primary`, `slide--white` — pure theme mapping, no psychology attached.
-- **Bottom element variants** — stat text, list, CTA pill, bullets — as reusable components.
-- **Output shape** — single HTML file, inline CSS/JS, no build step, 1080x1350 portrait.
-- **Export pipeline** — Puppeteer script, folder naming `YYMMDD-topic-slug/`, retina export.
-- **Quick checklist** — pure mechanical checks (dot count, ARIA, responsive, fonts loaded, logo SVG in avatar).
+5. **Gallery-driven init (picasso-style).** Six preview variants, user reacts, skill writes `.carousel.md` from the chosen direction. Blocked on image support landing first (variants need real visual diversity). Phase 3+.
 
-## What moves OUT of `SKILL.md`
+6. **Viral hook / creator exemplar library.** Static references with 100+ real hooks and creator carousel transcripts tagged by strategy. Would give Claude concrete material to imitate instead of just formulas. Mentioned in the 2026-04-21 session, never built. Likely meaningful output-quality improvement.
 
-Everything below leaves — put it in a separate file (suggestions: `ig-carousel-psychology.md`, or a sibling skill `ig-carousel-writer`):
+7. **Narrative-level type hints.** When image support ships, some narratives (Founder Contrast, Curiosity Gap) have specific slide positions that dramatically benefit from visuals. Should narratives carry optional type hints? Or is that redundant with content inference? Open — decide alongside image support work.
 
-- Strategy Selection table (Belief Disruption, Founder Contrast, etc.).
-- Specificity Rule.
-- Hook Psychology: Fear > Positive.
-- Hook Style: Conversational, Not Billboard.
-- The Conversation Test.
-- Hook Formula by Strategy table.
-- Hook Rules (1-7).
-- Action Playbooks (💬 Comment, 📤 Share, 💾 Save, 🔥 Controversy, 🏷️ Tag, 🔗 Product).
-- Auto-Select Action + Auto-Select CTA tables.
-- Common Structures → Emotional Psychology Strategies (Belief Disruption through Unpopular Opinion narratives).
-- Common Structures → Structural Strategies (PAS, Hook-Features-CTA, Educational narratives — the slide-by-slide *narrative* descriptions).
+---
 
-The structural strategies are borderline — they describe slide counts and theme sequences (construction-adjacent) but also dictate narrative arc (psychology-adjacent). Default: move them to the psychology doc, and leave only the *mechanical* bits in the skill (e.g. "carousels are 4-7 slides, default is 6, last slide is always CTA").
+## Key architectural principles (don't break these)
 
-## Suggested new sections to add to `SKILL.md`
+1. **Nothing in `SKILL.md` assumes brand or content.** All brand tokens flow through `.carousel.md`.
+2. **References are universal knowledge.** Narratives, hook formulas, action playbooks don't know which brand is running them.
+3. **Three-tier config flow:** `DESIGN.md` → `.carousel.md` → skill runtime.
+4. **Role-based theme references.** Narratives and HTML use roles (`anchor`/`body`/`alt`), not literal theme names.
+5. **CSS cascade over class multiplication.** `<em>` stays classless; parent `.slide--{role}` resolves styling.
+6. **Config is human-editable markdown with YAML frontmatter.** No JSON config, no custom DSL. Keeps the "read and edit by eye" ergonomics.
+7. **Relocation over rewriting.** When moving content between files, preserve prose verbatim unless the refactor specifically requires changes.
 
-When doing the split, use the opportunity to flesh out what's currently underdeveloped:
+## When picking up work next session
 
-1. **Background images** — section covering:
-   - Full-bleed image slides (image as background, text overlay).
-   - Inset images (image in body zone, headline above/below).
-   - Decorative images (small graphic, not primary content).
-   - Overlay gradients (`linear-gradient(0deg, rgba(0,0,0,0.7), transparent)`) for text legibility.
-   - When to use each.
-2. **Image generation via Nano Banana** — section covering:
-   - Prompt construction (aspect ratio 1080:1350, style tied to design system mood).
-   - How to translate slide content into an image prompt.
-   - Output path convention (`ig-carousel/YYMMDD-topic-slug/bg-01.png`, etc.).
-   - Fallback: pulling from stock/existing assets if no gen available.
-3. **Header / Body / Footer / Logo** — explicit subsections under "Slide Anatomy" or a new "Frame Anatomy" section. Currently the IG frame is described in passing; make it a first-class section.
-4. **Color switching on text** — consolidate the emphasis pattern + label colors + headline colors into one clear table keyed by background variant.
-
-## How to execute (next session)
-
-1. **Study the reference.** Read `C:\Users\AJ\Dev\carousel-skill\skills\carousel\SKILL.md` and `C:\Users\AJ\Dev\carousel-skill\references\carousel-anatomy.md` / `social-typography.md` / `strategy-selection.md` to see the construction-vs-strategy split done cleanly.
-2. **Set up the folder structure** under `.claude/skills/ig-carousel/`:
-   ```
-   ig-carousel/
-   ├── SKILL.md              # lean, brand-agnostic, construction-only
-   ├── HANDOFF.md            # this file
-   ├── references/
-   │   ├── carousel-anatomy.md       # header/body/footer/logo + slide zones
-   │   ├── social-typography.md      # type scale for IG
-   │   ├── color-system.md           # emphasis pattern, slide variants
-   │   ├── background-images.md      # full-bleed, inset, overlay gradients
-   │   ├── image-generation.md       # Nano Banana prompts, output paths, fallbacks
-   │   ├── export.md                 # Puppeteer pipeline
-   │   ├── strategy-selection.md     # all psychology content (moved verbatim)
-   │   ├── hook-formulas.md          # hook patterns by strategy
-   │   └── action-playbooks.md       # CTA action selection
-   └── templates/
-       └── carousel-config.md        # .carousel.md template
-   ```
-3. **Migrate content:**
-   - Move all psychology sections (Strategy Selection, Specificity Rule, Hook Psychology, Hook Style, Conversation Test, Hook Formula by Strategy, Hook Rules, Action Playbooks, Auto-Select tables, Emotional Psychology Strategies, Structural Strategies) into the psychology references — **verbatim, just relocate**.
-   - Move construction pieces (Typography Scale, Slide Anatomy, Emphasis Pattern, Bottom Element Variants, Reference Implementation, Quick Checklist) into the construction references.
-   - Keep the lean orchestration in `SKILL.md`: config resolution → layout → typography → color → backgrounds → components → output → export.
-4. **Strip LoopLinq specifics from `SKILL.md`:**
-   - Remove `looplinq.com` references — pull CTA text from `.carousel.md`.
-   - Remove the hardcoded LoopLinq logo SVG reference — pull logo from config / `DESIGN.md`.
-   - Remove the LoopLinq-specific `--primary: #FF5D02` defaults — all colors come from config.
-   - CTAs like "Start Free" become templates with `{brand.cta}` substitution.
-5. **Add a `.carousel.md` template** at `templates/carousel-config.md`:
-   - Brand: name, voice, audience, URL, logo path.
-   - Typography: headline font, body font, mono font, sizes.
-   - Color: primary, primary-dark, dark, white, muted variants.
-   - Carousel: default slide count, aspect ratio, default hook style.
-   - CTA defaults: pill text, product signup URL, keyword triggers.
-6. **Discovery mode** — if no `.carousel.md` exists when the skill runs, ask the user 4 questions and generate one. Mirror the carousel-skill pattern.
-7. **Write the LoopLinq `.carousel.md`** in the project root once the template exists — that's how LoopLinq's brand gets reconnected after the refactor.
-8. **Add new sections** that are currently missing:
-   - `references/background-images.md` — full-bleed, inset, overlay gradients.
-   - `references/image-generation.md` — Nano Banana prompts, output paths, fallbacks.
-9. **Frontmatter:** update skill description to drop any brand assumption — "Use when creating Instagram carousel slides for any brand. Reads `.carousel.md` for brand tokens."
-
-## Why this matters
-
-- **The skill becomes reusable for any content strategy.** Right now the skill assumes a specific school of psychology (fear-first, conversational, etc.). If a user wants a different voice, the skill fights them.
-- **The psychology doc becomes a standalone asset.** It's actually well-developed copywriting guidance that's currently buried inside a build manual.
-- **The skill stays lean.** Easier to update construction mechanics without touching strategy, and vice versa.
-
-## Out of scope for this handoff
-
-- Don't rewrite the psychology doc — just relocate it.
-- Don't change the HTML/CSS template (`ig-carousel/index.html`) unless the background-image or Nano Banana sections require new scaffolding.
-- Don't touch the export script.
+1. Read this file first (status + open items).
+2. If working on images, read `handoffs/image-generation.md` for full design context.
+3. Read `SKILL.md` + skim one reference to re-orient on the construction model.
+4. Check `Looplinq/.carousel.md` for a live example of a filled-in config.
