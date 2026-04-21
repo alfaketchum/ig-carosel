@@ -85,21 +85,58 @@ Load fonts via Google Fonts (or local `@font-face` if the design system specifie
 
 ### Slide Anatomy
 
-Resolve `layout.zones` from `.carousel.md`. Each slide stacks the listed zones top-to-bottom, vertically centered. The default schema is three zones:
+Resolve `layout.zones` from `.carousel.md`. Each slide has three zones in a consistent three-point vertical distribution:
 
 ```
 ┌─────────────────────┐
 │                     │
-│   {zones[0]}        │  ← e.g. label
+│   {zones[0]} LABEL  │  ← pushed down from top via margin-top: auto
+│   {zones[1]} HEADLINE│ ← centered (flex justify-content: center)
 │                     │
-│   {zones[1]}        │  ← e.g. headline (h2, with <em> emphasis)
 │                     │
-│   {zones[2]}        │  ← e.g. bottom (stat / list / CTA pill / bullets)
 │                     │
+│                     │
+│   {zones[2]} BOTTOM │  ← pinned to bottom via margin-top: auto
 └─────────────────────┘
 ```
 
-If a brand defines fewer or more zones in `.carousel.md`, render accordingly.
+**Required CSS pattern — do not deviate:**
+```css
+.slide {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;      /* horizontal centering */
+  text-align: center;        /* text alignment */
+  padding: 14% 10%;          /* generous internal padding */
+}
+.slide-label {
+  margin-top: auto;          /* pushes label from top */
+  margin-bottom: 6%;
+}
+.slide-bottom {
+  margin-top: auto;          /* pins bottom to bottom */
+}
+```
+
+**CRITICAL — spacer div for slides without a bottom element.** Body-role slides that carry only label + headline (most middle slides in a narrative) MUST include an empty spacer at the end to preserve three-zone distribution:
+
+```html
+<div class="slide slide--body">
+  <div class="slide-label">The Problem</div>
+  <h2 class="slide-headline">...</h2>
+  <div class="slide-spacer"></div>  <!-- required when no .slide-bottom -->
+</div>
+```
+
+With matching CSS:
+```css
+.slide-spacer { margin-top: auto; }
+```
+
+Without the spacer, `margin-top: auto` on the label collapses and content drifts to the bottom of the slide. Every slide — hook, body, CTA — must have three flex children (label, headline, bottom-OR-spacer) for consistent composition across the carousel.
+
+**Horizontal alignment:** text centered, content block centered. This is the established carousel convention (feeds read better with centered copy than left-aligned). Do not left-align headlines.
 
 ### Emphasis Pattern
 
@@ -194,18 +231,28 @@ If `caption.enabled: true` in `.carousel.md`, generate a caption alongside the s
 
 The caption.md lives alongside the HTML and (once exported) the PNGs. Human-readable — the user can edit before publishing.
 
-## Step 8: Export Slide Images
+## Step 8: Export Slide Images (MANDATORY)
 
-After generating the HTML carousel and caption, export each slide as a high-quality PNG for uploading to Postiz or any social media manager.
+**A carousel is not complete until PNGs are exported.** Instagram takes images, not HTML. Unless the user explicitly says "draft only" or "skip export," run the export script as the final step of every generation. Do not end your turn with only HTML.
 
 **Folder naming:** `{layout.output_dir}/YYMMDD-topic-slug/` (e.g. `ig-carousel/260409-nikki-glaser-confession/`)
 
 **Export process:**
 1. Run the export script at the path from `.carousel.md` (`layout.export_script`, default `ig-carousel/export-slides.mjs`):
    `node ig-carousel/export-slides.mjs "ig-carousel/YYMMDD-topic-slug/"`
-2. The script uses Puppeteer to screenshot each slide at 1080x1350 @ 2x retina (2160x2700 actual pixels)
+2. The script uses Puppeteer to screenshot each slide at 1080x1350 @ 2x retina (2160x2700 actual pixels). It reads `{output-folder}/index.html` (not a root-level template).
 3. Output: `slide-01.png`, `slide-02.png`, etc.
-4. Verify at least slide 1 and the last slide visually using the Read tool
+4. Verify at least slide 1 and the last slide visually using the Read tool. Check:
+   - Content matches the slide copy
+   - Label is near the upper-middle
+   - Headline is centered horizontally, wraps correctly
+   - Bottom element (if present) is pinned near the bottom
+   - No bleed from adjacent slides at the edges
+   - Emphasis rendering (italic / highlight / etc) looks correct
+
+**If PNGs look wrong:** common causes are (a) HTML layout violates the Step 5 Slide Anatomy CSS pattern, (b) missing `.slide-spacer` on slides without `.slide-bottom`, (c) node_modules not installed (run `npm install` first). Fix the root cause, re-run the script.
+
+**When to skip export:** only when the user explicitly asks for a draft, wants to iterate on copy before committing compute, or says "skip export." Otherwise the deliverable is incomplete.
 
 ## Quick Checklist
 
