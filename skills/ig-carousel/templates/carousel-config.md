@@ -155,6 +155,23 @@ caption:
     brand: []                       # always included (1-3 tags)
     topic: []                       # skill adds content-relevant tags (5-8)
     reach: []                       # broad discoverability tags (2-4)
+
+# =====================================================================
+# PUBLISHING — wire the carousel to Postiz for scheduled IG posts.
+# Opt-in per brand. Disabled by default to prevent accidental publishes.
+# Auth: run `postiz auth:login` once; credentials stored at
+# ~/.postiz/credentials.json. The skill never sees the API key.
+# See commands/publish-carousel.md for the procedure.
+# =====================================================================
+publishing:
+  postiz:
+    enabled: false                  # opt-in flag — must be true to publish
+    integration_id: ""              # from `postiz integrations:list` (e.g. cmoszdgm901t8mq0y2su6zxe3)
+    integration_type: "instagram-standalone"  # instagram | instagram-standalone
+    post_type: "post"               # post | story
+    default_type: "draft"           # draft | schedule  (start with draft for safety)
+    default_offset_minutes: 60      # if schedule, post N minutes from now (or use --at)
+    require_confirmation: true      # always show preview + confirm before submitting
 ---
 
 # Notes (free-form, optional)

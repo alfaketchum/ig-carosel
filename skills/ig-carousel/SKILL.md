@@ -288,7 +288,8 @@ ig-carousel/
 │   └── carousel-config.md        ← `.carousel.md` template for new projects
 ├── commands/
 │   ├── init-carousel.md          ← procedure to generate `.carousel.md` from DESIGN.md
-│   └── sync-carousel.md          ← detect + fix drift between `.carousel.md` and DESIGN.md
+│   ├── sync-carousel.md          ← detect + fix drift between `.carousel.md` and DESIGN.md
+│   └── publish-carousel.md       ← publish an exported carousel to IG via Postiz
 └── handoffs/
     └── image-generation.md       ← open handoff for image/chart slide support
 ```
