@@ -71,21 +71,23 @@ carousel-skill/skills/ig-carousel/
 
 ## Architecture invariants (do not break)
 
-These are the principles the skill is built on. Every change should preserve them.
+These are the principles the skill is built on. Every change should preserve them. The first one is the founding principle of the entire refactor — guard it carefully.
 
-1. **Three-tier config flow:** `DESIGN.md` (brand foundation, humans read) → `.carousel.md` (skill-readable bridge, per-project) → `SKILL.md` (universal recipe). Changes flow downward; never edit a generated carousel folder to "fix the brand."
+1. **Psychology is separated from construction.** `SKILL.md` is the *construction manual* — slide anatomy, themes, typography, layout pattern, export pipeline. **All copywriting strategy lives in `references/`** — strategy selection, hook formulas, structural narratives, action playbooks, caption writing. SKILL.md never embeds psychology; references never embed construction. If you find yourself writing "the hook should feel conversational" in SKILL.md, that's a violation — it belongs in `references/hook-formulas.md`. If you find yourself writing CSS pixel values in a reference, that's also a violation. This separation is what makes the skill brand-agnostic and the references reusable across content strategies.
 
-2. **Roles, not theme names.** Narratives reference `anchor` / `body` / `alt` — never literal theme names. A brand can rename theme keys in `.carousel.md`; references still work.
+2. **Three-tier config flow:** `DESIGN.md` (brand foundation, humans read) → `.carousel.md` (skill-readable bridge, per-project) → `SKILL.md` (universal recipe). Changes flow downward; never edit a generated carousel folder to "fix the brand."
 
-3. **Classless `<em>`, CSS cascade.** Generated HTML has bare `<em>` tags. Color and style come from `.slide--{role} em { ... }` rules.
+3. **Roles, not theme names.** Narratives reference `anchor` / `body` / `alt` — never literal theme names. A brand can rename theme keys in `.carousel.md`; references still work.
 
-4. **Earned emphasis.** 2-4 of 6 slides get emphasis. Never zero, never all. The earned test: remove the `<em>`; if the sentence still works, drop it.
+4. **Classless `<em>`, CSS cascade.** Generated HTML has bare `<em>` tags. Color and style come from `.slide--{role} em { ... }` rules.
 
-5. **Consistency over variation.** Carousels are scanned sequences; the brand signature comes from STRUCTURAL consistency across slides while CONTENT varies. This explicitly inverts picasso's variation principle.
+5. **Earned emphasis.** 2-4 of 6 slides get emphasis. Never zero, never all. The earned test: remove the `<em>`; if the sentence still works, drop it.
 
-6. **Skill ↔ Postiz CLI separation.** The skill produces files; the CLI handles auth, uploads, posting. Swapping publishers only touches `commands/publish-carousel.md`.
+6. **Consistency over variation.** Carousels are scanned sequences; the brand signature comes from STRUCTURAL consistency across slides while CONTENT varies. This explicitly inverts picasso's variation principle.
 
-7. **Caption first line earns the expand.** The first ~125 chars of a caption must create a curiosity gap; never deliver value pre-truncation.
+7. **Skill ↔ Postiz CLI separation.** The skill produces files; the CLI handles auth, uploads, posting. Swapping publishers only touches `commands/publish-carousel.md`.
+
+8. **Caption first line earns the expand.** The first ~125 chars of a caption must create a curiosity gap; never deliver value pre-truncation.
 
 ---
 
