@@ -68,7 +68,39 @@ These are not in DESIGN.md — ask the user (batch them into 2-3 questions, not 
   - `loud` — mid-tier, readable on IG-grid thumbnails. Headline ~70px at 1080.
   - `massive` — thumbnail-first, dominates the grid (creator-led brands). Headline ~87px at 1080.
 
-**Batch 3 (any TODOs from Step 2):**
+**Batch 3 (slide-type vocabulary):**
+
+The skill ships an 8-type vocabulary of slide layouts (full spec in `references/slide-types.md`). Brands declare which types their carousels are allowed to use. **`static_text_only` is always implicit** — it's the universal fallback. The user picks which *additional* types to enable.
+
+Ask:
+
+> Which slide-type layouts should this brand's carousels use? Pick any combination — the skill will choose per-slide based on content. (Reply with names, or `text-only` for static-text-only carousels, or `all` to enable everything.)
+
+Show this list as the menu:
+
+| Type | What it is |
+|---|---|
+| Captioned Image | Image with a caption underneath. Image is the body; caption explains it. |
+| Full-Frame Image | Image fills the entire slide. Optional small corner caption. |
+| Text Over Image | Image as background, headline overlaid with a darkening scrim. |
+| Pull Quote | Big quote mark, italic quoted text, attribution. For testimonials and direct quotes. |
+| Big Number | Huge stat as the focal point, label above, context below. For data slides. |
+| Side-by-Side Comparison | Two columns (A vs B), often with a verdict line. For Founder Contrast and before/after. |
+| Numbered List | Ordered stack of items with numbers. For listicle slides. |
+
+Parse the user's reply:
+- Match by display name (case-insensitive, partial-match OK — "quote" → `pull_quote`, "side by side" → `side_by_side_comparison`).
+- `text-only` → enabled set is just `[static_text_only]`.
+- `all` → all 8 types enabled.
+- Always include `static_text_only` in the enabled set regardless of user input.
+
+If the user picks any image-using types (`captioned_image`, `full_frame_image`, `text_over_image`, or `side_by_side_comparison`), follow up with one more question:
+
+> What's the image source for this brand? `user` (you'll provide image paths per slide), `local_library` (a folder of brand assets the skill can reference by name), or `none for now` (Phase 1: only `user` is wired up — pick this if you're enabling image types but not ready to provide images yet).
+
+Default to `user`. `local_library` is documented but not yet built (Phase 2).
+
+**Batch 4 (any TODOs from Step 2):**
 Ask only for tokens that were missing from DESIGN.md.
 
 ## Step 4 — Fill the Template
@@ -80,6 +112,7 @@ Load `templates/carousel-config.md` and substitute:
 - Keep the `layout` section at the template defaults for `themes`, `zones`, and `bottom_variants`.
 - **Apply the chosen typography preset** (see "Typography Presets" below) to `layout.typography`. Replace the template's clamp values with the preset's values. Default to `standard` if the user skipped the question.
 - Apply the chosen emphasis style to `layout.emphasis.style`.
+- **Write the `slide_types_enabled` block** based on Batch 3. Always include `static_text_only` first, then any types the user picked. If the user picked image-using types, also write the `images.sources` value from the follow-up question.
 
 ## Step 5 — Write `.carousel.md`
 
@@ -124,6 +157,8 @@ If Step 1 found nothing, skip token extraction and run the full question flow:
 6. Voice hook style + audience
 7. Emphasis style (`italic` default, or `bold` / `italic-underline` / `highlight` / `italic+highlight`)
 8. Typography scale (`standard` default, or `loud` / `massive` — see Typography Presets above)
-9. Logo SVG path (or "skip" — fallback to gradient circle)
+9. Slide types — which layouts to enable (see Batch 3 menu in Step 3 above; `static_text_only` always implicit; `text-only` / `all` / comma-separated names accepted)
+10. Image source if any image-using types were picked (`user` default; `local_library` not yet built)
+11. Logo SVG path (or "skip" — fallback to gradient circle)
 
-Then fill the template, applying the chosen typography preset to `layout.typography`, and write as in Step 5-6.
+Then fill the template, applying the chosen typography preset to `layout.typography` and writing the `slide_types_enabled` block, and proceed as in Step 5-6.

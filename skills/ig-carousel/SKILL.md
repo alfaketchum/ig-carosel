@@ -283,7 +283,8 @@ ig-carousel/
 │   ├── hook-formulas.md          ← hook format, psychology, rules, formulas by strategy
 │   ├── structural-narratives.md  ← slide-by-slide arcs per strategy
 │   ├── action-playbooks.md       ← CTA slide playbooks per action type
-│   └── caption-writing.md        ← IG caption craft — earn the "...more" tap
+│   ├── caption-writing.md        ← IG caption craft — earn the "...more" tap
+│   └── slide-types.md            ← 8-type slide vocabulary (zones, CSS skeletons, when-to-pick)
 ├── templates/
 │   └── carousel-config.md        ← `.carousel.md` template for new projects
 ├── commands/

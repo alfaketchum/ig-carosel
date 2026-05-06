@@ -145,6 +145,30 @@ layout:
     - pill       # CTA pill (most common on last slide)
     - bullets    # stacked bullet points
 
+  # Slide-type vocabulary — which layouts this brand's carousels can use.
+  # `static_text_only` is always implicit (universal fallback). Brands
+  # declare which *additional* layouts the skill is allowed to pick from.
+  # Full spec: skills/ig-carousel/references/slide-types.md
+  #
+  # Available types:
+  #   static_text_only           — label/headline/bottom (default, always enabled)
+  #   captioned_image            — label/image/caption
+  #   full_frame_image           — image fills slide, optional caption
+  #   text_over_image            — image background + overlaid headline
+  #   pull_quote                 — quote mark/quoted text/attribution
+  #   big_number                 — label/huge stat/context
+  #   side_by_side_comparison    — A/B columns + verdict
+  #   numbered_list              — label/numbered stack/context
+  slide_types_enabled:
+    - static_text_only
+
+  # Image sources — only relevant if any image-using types are enabled.
+  # Phase 1 supports `user` (paths provided per-slide). Phase 2: `local_library`.
+  images:
+    mode: optional               # never | optional | encouraged
+    sources:
+      - user
+
 # =====================================================================
 # CAPTION — every carousel ships with a caption generated alongside
 # the slides. The core rule: the first ~125 chars must earn the
