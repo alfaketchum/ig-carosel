@@ -83,64 +83,137 @@ Resolve `layout.typography` from `.carousel.md`. Each role (`headline`, `label`,
 
 Load fonts via Google Fonts (or local `@font-face` if the design system specifies local files).
 
+### Slide Type Resolution
+
+Before building each slide, resolve which slide **TYPE** it should be. This is a separate axis from theme/role:
+- **Theme (role)** controls colors — `anchor` / `body` / `alt`
+- **Type** controls layout structure — `static_text_only` / `captioned_image` / `pull_quote` / etc.
+
+Resolution flow per slide:
+
+1. **Read `slide_types_enabled`** from `.carousel.md`. The constraint — only types in this list can appear in this brand's carousels. `static_text_only` is implicit even if not listed.
+
+2. **Read `slide_type_strategy`** from `.carousel.md` (default `uniform`):
+   - **`uniform`** — pick ONE type for the entire carousel. Skill chooses from `slide_types_enabled` based on dominant content signals; same type for every slide.
+   - **`mixed`** — pick a type per slide independently. Skill reads each slide's content and picks from `slide_types_enabled`. Different slides may have different types.
+   - **`element_locked`** — read `slide_type_element_map` from `.carousel.md`. Each role maps to a fixed type. Pick by role.
+
+3. **Per-slide override:** if the user prompt specifies a type for a specific slide ("slide 3 → big_number"), use that — overrides the strategy.
+
+4. **Fallback:** if no signal favors a richer type, use `static_text_only`. The universal default.
+
+5. **For each slide resolved as type T:**
+   - Look up T's spec in `references/slide-types.md` for zones, elements, and CSS skeleton
+   - Output `<div class="slide slide--{role} slide--{type-key-with-dashes}">` — TWO classes: role drives colors, type drives layout
+   - Type key uses dashes for CSS: `static_text_only` → `slide--static-text-only`, `captioned_image` → `slide--captioned-image`
+
+**Content signals for `mixed` strategy:**
+- "show / image of / screenshot of X" → `captioned_image` or `full_frame_image` (depending on whether the image is supporting context vs the message itself)
+- Specific stat / number / percentage is the payload → `big_number`
+- Direct quote with attribution → `pull_quote`
+- A vs B / two creators / before-and-after → `side_by_side_comparison`
+- Ranked items / numbered list → `numbered_list`
+- Image as backdrop with text overlay → `text_over_image`
+- Otherwise → `static_text_only`
+
+### Hook Theme Resolution
+
+The hook slide (slide 1) doesn't necessarily use the brand's anchor theme. Resolve which theme it uses:
+
+1. **Read `hook_themes_allowed`** from `.carousel.md` (default: `[anchor]`).
+2. **Check user prompt for `--hook-theme {role}` flag.** If specified AND the role appears in `hook_themes_allowed`, use it.
+3. **Otherwise:** use the first role in `hook_themes_allowed` (typically `anchor`).
+4. **If the resolved hook theme is `alt`:** skip the mid-carousel `alt` variety break. Slide 1 IS the variety; doubling up weakens the rhythm.
+5. **CTA slide (last slide):** always uses `anchor` regardless of the hook theme. Brand stamp closes every carousel consistently.
+
+This lets brands create IG-grid variety across carousels without diluting the brand stamp at the close. See `references/hook-formulas.md` for the full pattern.
+
 ### Slide Anatomy
 
-Zones are owned **per slide type** in `references/slide-types.md` — not per brand. Each type declares its own zone vocabulary (vertical 3-stack, full-bleed + corner, z-stacked layers, or grid). Resolve the slide's type first (from `slide_types_enabled` + `slide_type_strategy`), then look up its zones in `slide-types.md`.
+Each slide gets **two CSS classes** on its outer div: `.slide--{role}` (colors) and `.slide--{type-key}` (layout). The role-class colors come from `layout.themes` resolution (above). The type-class layout comes from each type's spec in `references/slide-types.md`.
 
-For Static Text Only (the default and most common type), zones are vertical:
+```html
+<!-- Static Text Only on body theme -->
+<div class="slide slide--body slide--static-text-only">...</div>
 
-```
-┌─────────────────────┐
-│                     │
-│        TOP          │  ← header element (pushed down from top via margin-top: auto)
-│       MIDDLE        │  ← body element (centered via flex justify-content: center)
-│                     │
-│                     │
-│                     │
-│                     │
-│       BOTTOM        │  ← footer element (pinned via margin-top: auto)
-└─────────────────────┘
+<!-- Captioned Image on anchor theme -->
+<div class="slide slide--anchor slide--captioned-image">...</div>
 ```
 
-Other types (Side-by-Side Comparison, Full-Frame Image, Text Over Image) have different zone structures — see slide-types.md for each type's spec.
+#### Universal slide CSS (applies to all types)
 
-**Required CSS pattern — do not deviate:**
+These properties hold across every type — the `.slide` class is the shared base:
+
 ```css
 .slide {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;      /* horizontal centering */
-  text-align: center;        /* text alignment */
+  align-items: center;
+  text-align: center;
   padding: 14% 10%;          /* generous internal padding */
-}
-.slide-label {
-  margin-top: auto;          /* pushes label from top */
-  margin-bottom: 6%;
-}
-.slide-bottom {
-  margin-top: auto;          /* pins bottom to bottom */
+  position: relative;
+  /* Note: justify-content varies by type — vertical 3-stack uses center;
+     full-bleed types may set padding: 0 to allow the image to fill */
 }
 ```
 
-**CRITICAL — spacer div for slides without a bottom element.** Body-role slides that carry only label + headline (most middle slides in a narrative) MUST include an empty spacer at the end to preserve three-zone distribution:
+#### Per-type layout (the rest)
+
+For each type, look up the layout spec in `references/slide-types.md`:
+
+| Type | Layout pattern | Key CSS |
+|---|---|---|
+| `static_text_only` | vertical 3-stack | `justify-content: center`, `margin-top: auto` on label and bottom |
+| `captioned_image` | vertical 3-stack | same flex pattern; `body` slot is an `<img>` instead of `<h2>` |
+| `full_frame_image` | full-bleed + corner | `padding: 0`; image as background or `<img>` filling canvas; caption absolute-positioned |
+| `text_over_image` | z-stacked layers | image as background with linear-gradient scrim; text overlaid |
+| `pull_quote` | vertical 3-stack | quote-mark in header; italic body; attribution footer |
+| `big_number` | vertical 3-stack | huge serif body (1.5-2× headline); context footer |
+| `side_by_side_comparison` | grid | header on top, 2-column grid for body, verdict footer |
+| `numbered_list` | vertical 3-stack | header; body is a `<ol>`-style stack; optional context footer |
+
+**Vertical 3-stack family pattern (Static Text Only, Captioned Image, Big Number, Pull Quote, Numbered List):**
+
+```css
+.slide--static-text-only,
+.slide--captioned-image,
+.slide--big-number,
+.slide--pull-quote,
+.slide--numbered-list {
+  justify-content: center;
+}
+.slide-label,           /* header zone (top) */
+.slide-quote-mark {
+  margin-top: auto;
+  margin-bottom: 6%;
+}
+.slide-bottom,          /* footer zone (bottom) */
+.slide-caption,
+.slide-quote-attribution,
+.slide-context {
+  margin-top: auto;
+}
+```
+
+**CRITICAL — spacer div for slides without a footer element.** Body-role slides that carry only header + body (no footer) MUST include an empty spacer at the end to preserve the 3-zone distribution. Applies to all vertical-3-stack types:
 
 ```html
-<div class="slide slide--body">
+<div class="slide slide--body slide--static-text-only">
   <div class="slide-label">The Problem</div>
   <h2 class="slide-headline">...</h2>
-  <div class="slide-spacer"></div>  <!-- required when no .slide-bottom -->
+  <div class="slide-spacer"></div>  <!-- required when no footer element -->
 </div>
 ```
 
-With matching CSS:
 ```css
 .slide-spacer { margin-top: auto; }
 ```
 
-Without the spacer, `margin-top: auto` on the label collapses and content drifts to the bottom of the slide. Every slide — hook, body, CTA — must have three flex children (label, headline, bottom-OR-spacer) for consistent composition across the carousel.
+Without the spacer, `margin-top: auto` on the header collapses and content drifts to the bottom of the slide.
 
-**Horizontal alignment:** text centered, content block centered. This is the established carousel convention (feeds read better with centered copy than left-aligned). Do not left-align headlines.
+**Horizontal alignment:** text centered, content block centered. This is the established carousel convention (feeds read better with centered copy than left-aligned). Do not left-align headlines except in `side_by_side_comparison`'s body cells where left-align inside the cell can be appropriate.
+
+**For non-vertical-3-stack types** (Full-Frame Image, Text Over Image, Side-by-Side Comparison) — see each type's CSS skeleton in `references/slide-types.md`. The vertical-3-stack pattern above does NOT apply to those.
 
 ### Emphasis Pattern
 
@@ -182,9 +255,18 @@ For `italic+highlight`, each theme's `emphasis` becomes an object: `emphasis: { 
 
 **Output in all cases:** `<em>key words</em>` — no class, no inline style. The theme class on the parent slide resolves everything.
 
-### Bottom Element Variants
+### Bottom Element Variants (Static Text Only)
 
-Resolve `layout.bottom_variants` from `.carousel.md`. The allowed components for the bottom zone (default: `stat`, `list`, `pill`, `bullets`). The skill picks one per slide based on content + selected action:
+**Scope:** this section applies only to slides typed `static_text_only`. Other slide types have their own footer/bottom element defined per-type in `references/slide-types.md`:
+- `captioned_image` → caption text
+- `full_frame_image` → optional corner caption
+- `pull_quote` → attribution
+- `big_number` → context line
+- `numbered_list` → optional context line
+- `side_by_side_comparison` → verdict line
+- `text_over_image` → no footer
+
+For Static Text Only slides, resolve `layout.bottom_variants` from `.carousel.md`. The allowed components for the bottom zone (default: `stat`, `list`, `pill`, `bullets`). The skill picks one per slide based on content + selected action:
 
 - **Stat text** — `<p class="slide-stat">…</p>`
 - **List (struck-through)** — `<div class="tool-list"><span class="tool-item">…</span></div>`

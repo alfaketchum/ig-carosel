@@ -7,6 +7,10 @@ Role reminder:
 - `body` — dark/readable surface for middle content
 - `alt` — secondary surface for summaries or contrast sections (optional; defaults to `body` if not defined)
 
+**Note on slide types vs roles:** these arcs specify only the *role* (color theme) per slide. The *type* (layout) is resolved separately per `SKILL.md` Step 5 "Slide Type Resolution" — based on `slide_types_enabled`, `slide_type_strategy`, and content signals. A slide can be `body` role + `big_number` type, or `anchor` role + `static_text_only` type, etc. The two axes are independent.
+
+**Note on hook theme:** these arcs say "Slide 1: anchor" — but if the brand has `hook_themes_allowed` declared with multiple roles AND the user passes `--hook-theme {role}`, slide 1 may use a different role. See `references/hook-formulas.md` "Hook Theme Variation". If hook is `alt`, also skip the mid-carousel `alt` variety break.
+
 ## Emotional Psychology Strategies
 
 **Belief Disruption / Ragebait (5-6 slides):**
