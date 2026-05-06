@@ -177,15 +177,22 @@ These are the principles the skill is built on. Every change should preserve the
 
 ## Open handoffs
 
-### `handoffs/image-generation.md`
+### `handoffs/image-generation.md` — slide-type vocabulary (renamed + expanded 2026-05-06)
 
-Phase 1 image support — designed but NOT built. Settled on **vocabulary + cascaded approach**:
-- Slide types vocabulary: `text` / `image_inset` / `screenshot`
-- Brand declares `slide_types_enabled` in config
-- Skill picks per-slide based on content + brand mode
-- User overrides at prompt time
+The vocabulary system was renamed and expanded this session in preparation for a future `/clone-carousel` command (picasso-parallel — ingest reference carousels, extract style, write `.carousel.md`). The 8 named types now live in the handoff:
 
-**Recommendation:** use the text-only skill in practice for a few weeks before building images. Watch for what actually hurts. The image-generation handoff has 8 open questions that need real-usage data before the design can be finalized.
+1. **Static Text Only** (`static_text_only`) — current default, always implicit
+2. **Captioned Image** (`captioned_image`)
+3. **Full-Frame Image** (`full_frame_image`)
+4. **Text Over Image** (`text_over_image`)
+5. **Pull Quote** (`pull_quote`)
+6. **Big Number** (`big_number`)
+7. **Side-by-Side Comparison** (`side_by_side_comparison`)
+8. **Numbered List** (`numbered_list`)
+
+**Status:** design settled, naming locked, **ready to build**. The `/clone-carousel` command depends on this — can't extract a brand's style without a vocabulary to map findings into. Phasing in the handoff: 1a (3 types) → 1b (2 text types) → 2 (2 layout-complex types) → 3 (text-over-image, last because legibility is fiddly).
+
+**Recommendation:** when next session has a couple-hour block, build Phase 1a (`captioned_image` + `full_frame_image` on top of the existing `static_text_only`). That validates the cascade, the `slide_types_enabled` config block, and the schema migration path before committing to the full vocabulary.
 
 ---
 
