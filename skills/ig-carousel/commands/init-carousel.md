@@ -125,7 +125,7 @@ Load `templates/carousel-config.md` and substitute:
 
 - Every extracted value from Step 2
 - Every answer from Step 3
-- Keep the `layout` section at the template defaults for `themes`, `zones`, and `bottom_variants`.
+- Keep the `layout` section at the template defaults for `themes` and `bottom_variants`. (Zones are no longer brand-level; they're owned per slide type in `references/slide-types.md`.)
 - **Apply the chosen typography preset** (see "Typography Presets" below) to `layout.typography`. Replace the template's clamp values with the preset's values. Default to `standard` if the user skipped the question.
 - Apply the chosen emphasis style to `layout.emphasis.style`.
 - **Write the `slide_types_enabled` block** based on Batch 3. Always include `static_text_only` first, then any types the user picked. If the user picked image-using types, also write the `images.sources` value from the follow-up question.

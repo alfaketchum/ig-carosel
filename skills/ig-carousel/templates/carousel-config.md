@@ -49,12 +49,11 @@ layout:
   # The script and its puppeteer dependency live there, not per-brand.
   export_script: "<absolute-path-to>/carousel-skill/bin/export-slides.mjs"
 
-  # The 3 vertical zones inside every slide, top to bottom.
-  # Rename or reorder if your brand uses a different anatomy.
-  zones:
-    - label        # small uppercase tag
-    - headline     # primary message, large serif (or whatever)
-    - bottom       # stat, list, CTA pill, or bullets
+  # NOTE: zones are no longer declared at the brand level — they're
+  # owned per slide type in skills/ig-carousel/references/slide-types.md.
+  # Each slide type defines its own zones + elements. See slide-types.md
+  # for the canonical layout per type. Brands declare which TYPES they
+  # use (slide_types_enabled below); the type's spec then defines zones.
 
   # Slide themes — 3 variants mapped from design tokens.
   # Each theme declares a `role` (how narratives reference it) and a set

@@ -62,7 +62,7 @@ Each strategy has a slide-by-slide arc that specifies slide count and theme per 
 
 ## Step 5: Build the Slides
 
-All layout values — theme color mappings, typography scale, slide anatomy zones, emphasis rules, and allowed bottom-element variants — live in `.carousel.md` under the `layout` key. **Do not hardcode layout values in generated slides; pull them from config.** The schema below is universal; values are per-brand.
+All brand-level layout values — theme color mappings, typography scale, emphasis rules, allowed bottom-element variants, and which slide types are enabled — live in `.carousel.md` under the `layout` key. **Per-type zones and element specs live in `references/slide-types.md`** — not in the brand config. Each type owns its own anatomy. **Do not hardcode layout values in generated slides; pull theme/typography values from config and zone/element values from slide-types.md.** The schema below is universal; values are per-brand.
 
 ### Slide Themes
 
@@ -85,20 +85,24 @@ Load fonts via Google Fonts (or local `@font-face` if the design system specifie
 
 ### Slide Anatomy
 
-Resolve `layout.zones` from `.carousel.md`. Each slide has three zones in a consistent three-point vertical distribution:
+Zones are owned **per slide type** in `references/slide-types.md` — not per brand. Each type declares its own zone vocabulary (vertical 3-stack, full-bleed + corner, z-stacked layers, or grid). Resolve the slide's type first (from `slide_types_enabled` + `slide_type_strategy`), then look up its zones in `slide-types.md`.
+
+For Static Text Only (the default and most common type), zones are vertical:
 
 ```
 ┌─────────────────────┐
 │                     │
-│   {zones[0]} LABEL  │  ← pushed down from top via margin-top: auto
-│   {zones[1]} HEADLINE│ ← centered (flex justify-content: center)
+│        TOP          │  ← header element (pushed down from top via margin-top: auto)
+│       MIDDLE        │  ← body element (centered via flex justify-content: center)
 │                     │
 │                     │
 │                     │
 │                     │
-│   {zones[2]} BOTTOM │  ← pinned to bottom via margin-top: auto
+│       BOTTOM        │  ← footer element (pinned via margin-top: auto)
 └─────────────────────┘
 ```
+
+Other types (Side-by-Side Comparison, Full-Frame Image, Text Over Image) have different zone structures — see slide-types.md for each type's spec.
 
 **Required CSS pattern — do not deviate:**
 ```css
