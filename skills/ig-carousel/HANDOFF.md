@@ -1,6 +1,6 @@
 ---
 status: active
-updated: 2026-05-06
+updated: 2026-05-06 (evening)
 owner: AJ
 ---
 
@@ -16,7 +16,30 @@ This doc tracks what's shipped, what's open, and lingering questions. **Read thi
 4. **Look at `Looplinq/.carousel.md`** — a live, working brand config
 5. **Look at one carousel folder** — `Looplinq/ig-carousel/260505-ai-vs-social-media-managers/` for the latest end-to-end output (HTML + caption + 6 PNGs)
 
-## Recent activity (2026-05-06 session)
+## Recent activity (2026-05-06 evening session)
+
+Typography iteration drove the first concrete config-vs-skill separation lesson. Two carousels shipped (one published, one scheduled). `/init-carousel` gained typography preset support so future brands inherit the lesson without touching the skill template.
+
+### Completed this session
+
+| Change | What |
+|---|---|
+| **Typography presets added to `/init-carousel`** | Step 3 Batch 2 now asks for typography scale (`standard` \| `loud` \| `massive`). Step 4 substitutes the chosen preset into `layout.typography` instead of inheriting template defaults. New "Typography Presets" reference table with clamp values + 1080px reference points. Fallback flow (no DESIGN.md) also asks emphasis style + typography scale. Skill template stays at `standard` for hand-editors. Commit `84dd041`. |
+| **Looplinq's `.carousel.md` bumped to `massive` preset** | After 5 publish iterations of `founder-contrast-psychology` (v1 standard fonts: too small in IG grid; v2 +37% with reduced padding: too dominant; v3 +18% modest: still small; v4 +37% padding restored: better; v5 +47%: landed). Final values: headline `clamp(34px, 8.1vw, 104px)`, label `clamp(13px, 2.8vw, 34px)`, body `clamp(17px, 3.6vw, 44px)`. Padding stays `14% 10%`. **Looplinq config only — skill template untouched** per user direction. |
+| **founder-contrast-psychology published (v5 keeper)** | `Looplinq/ig-carousel/260506-founder-contrast-psychology/`. 7 slides, "Two Creators" framing about comparison-carousel manipulation. 5 publishes (`runs[]` in published.json), v5 final. Live: https://www.instagram.com/p/DYAuY7JkhSJ/ — alongside v2/v3/v4 (user accepted duplicates rather than deleting iterations). |
+| **tribe-v2-unpopular-opinion scheduled** | `Looplinq/ig-carousel/260506-tribe-v2-unpopular-opinion/`. Strategy: Unpopular Opinion (canonical 6-slide arc). Hook: "Social media marketing as we know it is *dead.* Neuromarketing just took its job. Hear me out." Postiz post: `cmoukvcmd053al70y7j9a6thl`. Fires 2026-05-07T13:00Z (9am EDT). |
+| **25-word cap docs tightened** | `references/hook-formulas.md` and `references/caption-writing.md`: bumped headline cap 20 → 25 words with "hard ceiling, not a target; most should land 15-22" framing. Carried in working tree from a prior session, validated and committed this session. |
+| **Process lesson: consult references before writing** | First Tribe V2 attempt skipped Step 2 (strategy selection) — built intuitively, output landed but with no documented strategy. Re-ran with proper flow (Curiosity Gap canonical 5-slide arc), then user pivoted to Unpopular Opinion. Surfaced as accountability moment in conversation. |
+
+### Validated by real-world iteration
+
+- **Typography lesson**: bumping font size alone doesn't fix IG-grid readability. Word count on slide 1 matters more — a 24-word hook even at `massive` size still reads dense as a thumbnail. The Looplinq founder-contrast hook is 24 words; user accepted the trade-off rather than rewriting. Worth keeping the "cover slide ≤ ~8 words" instinct as a future iteration.
+- **No em dashes in slide copy (Rule 7)**: missed in first Tribe V2 build, caught on the rerun. Existing published Looplinq carousels still contain em dashes from older sessions — OK to leave, but worth knowing for re-render decisions.
+- **Iterate-then-publish multiplies on IG**: 5 publish iterations of the same content created 4 duplicates on the IG account (v1 was deleted before v2). User chose to publish-then-clean rather than delete-before-republish; both are valid but doubling-up the IG grid is the side effect.
+
+---
+
+## Recent activity (2026-05-06 morning session)
 
 Architectural cleanup. The export pipeline moved from per-brand to skill-resident; HANDOFF was corrected to match disk reality. No new content features.
 
@@ -123,6 +146,7 @@ These are the principles the skill is built on. Every change should preserve the
 - `.carousel.md` at repo root — fully populated (brand, voice, design tokens, layout themes, typography scale, emphasis style: italic, caption pools, publishing config)
 - `Design System/DESIGN.md` is the canonical source of truth
 - `voice.hook_style: fear-first`, `layout.emphasis.style: italic`
+- **Typography preset: `massive`** (set 2026-05-06 evening after 5 publish iterations). Headline `clamp(34px, 8.1vw, 104px)`, label `clamp(13px, 2.8vw, 34px)`, body `clamp(17px, 3.6vw, 44px)`. CTA pill stays at the constant `clamp(11px, 2vw, 22px)` across all presets.
 
 ### Postiz integration (Looplinq)
 - CLI installed globally: `npm install -g postiz`
@@ -141,7 +165,11 @@ These are the principles the skill is built on. Every change should preserve the
 - 1080×1350 viewport @ 2x retina (2160×2700 actual pixels)
 
 ### Known good carousels
-- `Looplinq/ig-carousel/260505-ai-vs-social-media-managers/` — most recent, fully shipped (HTML + caption + 6 PNGs, no published.json)
+- `Looplinq/ig-carousel/260506-founder-contrast-psychology/` — **published live (v5 of 5)** at https://www.instagram.com/p/DYAuY7JkhSJ/. 7 slides, "Two Creators" comparison-content framing. Validates the `massive` typography preset end-to-end.
+- `Looplinq/ig-carousel/260506-tribe-v2-unpopular-opinion/` — **scheduled** (fires 2026-05-07T13:00Z). 6 slides, Unpopular Opinion strategy, Tribe V2 / neuromarketing topic. Post id `cmoukvcmd053al70y7j9a6thl`.
+- `Looplinq/ig-carousel/260506-tribe-v2-neuromarketing/` — Curiosity Gap version of the same Tribe V2 topic (5 slides). Rejected in favor of the Unpopular Opinion variant; kept as reference for strategy comparison.
+- `Looplinq/ig-carousel/260506-creators-claude-skills/` — draft only, never published. 7 slides, "5 things creators don't know about Skills" listicle. User said "meh" and pivoted.
+- `Looplinq/ig-carousel/260505-ai-vs-social-media-managers/` — fully shipped local (HTML + caption + 6 PNGs, no published.json)
 - `Looplinq/ig-carousel/260421-claude-design-economics/` — was published as draft, draft deleted; published.json points to deleted post (annotation needed)
 - `Looplinq/ig-carousel/260421-lecun-vindicated/` — predates the layout pattern fix; HTML uses old left-aligned no-spacer pattern; no PNGs
 
@@ -223,8 +251,8 @@ Pick by energy:
 
 ## Status snapshot
 
-- **Skill repo**: `C:\Users\shah_\dev\carousel-skill\` — last commit `a7822ac`. Uncommitted from 2026-05-06 session: `bin/export-slides.mjs` (new), `package.json` (new), `.gitignore` (new), edits to `SKILL.md`, `HANDOFF.md`, `templates/carousel-config.md`. `node_modules/` ignored.
-- **Brand repo**: `C:\Users\shah_\dev\Looplinq\` — uncommitted: deleted `ig-carousel/export-slides.mjs`; edited `.carousel.md` and `test-brands/nova/.carousel.md` (export_script path).
+- **Skill repo**: `C:\Users\shah_\dev\carousel-skill\` — last commit `84dd041` ("Add typography presets to /init-carousel; tighten 25-word cap docs", 2026-05-06 evening, pushed). Still untracked from prior session: `bin/`, `package.json`, `.gitignore` — see lingering follow-up below.
+- **Brand repo**: `C:\Users\shah_\dev\Looplinq\` — last commit `5da998d` ("Bump Looplinq typography (+47%) and ship founder-contrast carousel", 2026-05-06 evening, pushed). Clean working tree at session end.
 - **Skill install**: directory junction at `~/.claude/skills/ig-carousel` → `~/dev/carousel-skill/skills/ig-carousel`. Live across all projects. `~/.claude/skills/` now has `graphify`, `picasso`, `ig-carousel`.
-- **Postiz**: authenticated, no active drafts (deleted at end of 2026-05-05 session).
-- **Latest carousel**: `Looplinq/ig-carousel/260505-ai-vs-social-media-managers/` — local only, ready to publish.
+- **Postiz**: authenticated. **One scheduled post pending fire**: Tribe V2 Unpopular Opinion at 2026-05-07T13:00Z. Live posts: 4 iterations of `founder-contrast-psychology` on Looplinq IG (v5 is the keeper; v2/v3/v4 are duplicates that can be deleted manually).
+- **Latest carousels**: see "Known good carousels" above. v5 founder-contrast is the visual reference for the `massive` typography preset.
