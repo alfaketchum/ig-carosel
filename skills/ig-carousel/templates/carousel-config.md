@@ -164,11 +164,13 @@ layout:
 
   # Strategy — how the skill picks slide types WITHIN a single carousel.
   # Only matters when more than one type is enabled.
-  #   uniform        — all slides in a carousel use the same type (default)
-  #                    skill picks the dominant type per carousel from content
-  #   mixed          — each slide picks independently from enabled types
-  #                    based on content signals; max content fit, less rhythm
-  #   element_locked — specific type per theme role (see slide_type_element_map)
+  #   uniform                   — all slides in a carousel use the same type (default)
+  #                               skill picks the dominant type per carousel from content
+  #   mixed                     — each slide picks independently from enabled types
+  #                               based on content signals; max content fit, less rhythm
+  #   element_locked            — specific type per theme role (see slide_type_element_map)
+  #   auto_select_slide_type    — skill picks the strategy per carousel based on content
+  #                               (cedes control to the skill; lowest friction)
   slide_type_strategy: uniform
 
   # Only used when slide_type_strategy: element_locked

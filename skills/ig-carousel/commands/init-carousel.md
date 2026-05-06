@@ -107,8 +107,9 @@ Default to `user`. `local_library` is documented but not yet built (Phase 2).
 > - **`uniform`** (default) — every slide in a carousel uses the same type. The skill picks one type per carousel based on content. Strongest brand signature. Good for editorial brands and testimonial roundups.
 > - **`mixed`** — each slide picks its own type independently from the enabled set, based on content signals. Strongest content fit. Best for storytelling brands.
 > - **`element_locked`** — specific type per theme role (anchor / body / alt). Predictable rhythm without full uniformity. e.g., "anchor slides are always Static Text Only, body slides are always Captioned Image."
+> - **`auto_select_slide_type`** — Auto Select Slide Type. Skill picks the strategy per carousel based on content (cohesive narrative → uniform; multi-beat varied content → mixed; if brand has declared an element_map → element_locked). Lowest friction; cedes control to the skill.
 
-Default to `uniform`.
+Default to `uniform`. Brands wanting maximum flexibility can choose `auto_select_slide_type` instead.
 
 If the user picks `element_locked`, ask the mapping:
 
@@ -176,7 +177,7 @@ If Step 1 found nothing, skip token extraction and run the full question flow:
 8. Typography scale (`standard` default, or `loud` / `massive` — see Typography Presets above)
 9. Slide types — which layouts to enable (see Batch 3 menu in Step 3 above; `static_text_only` always implicit; `text-only` / `all` / comma-separated names accepted)
 10. Image source if any image-using types were picked (`user` default; `local_library` not yet built)
-11. Slide-type strategy: `uniform` (default) / `mixed` / `element_locked`. If `element_locked`, ask the role→type mapping.
+11. Slide-type strategy: `uniform` (default) / `mixed` / `element_locked` / `auto_select_slide_type`. If `element_locked`, ask the role→type mapping.
 12. Logo SVG path (or "skip" — fallback to gradient circle)
 
 Then fill the template, applying the chosen typography preset to `layout.typography` and writing the `slide_types_enabled` block, and proceed as in Step 5-6.
