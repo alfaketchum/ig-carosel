@@ -1,0 +1,12 @@
+{
+  "name": "carousel-skill",
+  "private": true,
+  "type": "module",
+  "description": "ig-carousel skill — bin/ scripts run from this directory so brands don't each install puppeteer.",
+  "scripts": {
+    "export": "node bin/export-slides.mjs"
+  },
+  "dependencies": {
+    "puppeteer": "^24.40.0"
+  }
+}
