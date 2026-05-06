@@ -15,12 +15,11 @@ Two layers of decision:
 
 ### Strategy modes
 
-| Mode | Who picks | What the skill does | When to use |
-|---|---|---|---|
-| **`uniform`** (default) | Brand locks | All slides in a single carousel use the same type. Skill picks one type per carousel based on dominant content signals. | Editorial brands, testimonial roundups, brands that want strong structural rhythm. The Looplinq founder-contrast carousel is implicitly uniform (all `static_text_only`). |
-| **`mixed`** | Brand locks | Each slide picks its own type independently from the enabled set, based on content. Cascade applies (see below). | Storytelling brands where layout variety serves the narrative. |
-| **`element_locked`** | Brand locks | Specific type per theme role. Brand declares `slide_type_element_map: { anchor: X, body: Y, alt: Z }`. | Brands wanting predictable rhythm — anchor always one shape, body always another. |
-| **`auto_select_slide_type`** | Skill picks per carousel | Skill reads content signals and picks the strategy each time: cohesive narrative → uniform, multi-beat varied content → mixed, brand has element_map → element_locked. | Brands that want maximum flexibility and trust the skill's content-shape judgment. Cedes control. |
+| Mode | What the skill does | When to use |
+|---|---|---|
+| **`uniform`** (default) | All slides in a single carousel use the same type. Skill picks one type per carousel based on dominant content signals. | Editorial brands, testimonial roundups, brands that want strong structural rhythm. The Looplinq founder-contrast carousel is implicitly uniform (all `static_text_only`). |
+| **`mixed`** | Each slide picks its own type independently from the enabled set, based on content. Cascade applies (see below). | Storytelling brands where layout variety serves the narrative. |
+| **`element_locked`** | Specific type per theme role. Brand declares `slide_type_element_map: { anchor: X, body: Y, alt: Z }`. | Brands wanting predictable rhythm — anchor always one shape, body always another. |
 
 ### The cascade (when strategy is `mixed`)
 

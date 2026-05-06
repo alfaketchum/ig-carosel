@@ -111,7 +111,7 @@ slide_type_element_map:
 - **Cons:** rigid — content without images forces awkward fallbacks
 - **Best for:** brands with strict visual signatures
 
-**Also added 2026-05-06 evening:** a `uniform` strategy (default) that doesn't appear in the original A-E framework. Uniform = all slides in a single carousel use the same type, skill picks the dominant type per carousel. This is the most common shape for editorial brands and testimonial roundups, and matches the implicit current behavior where every slide is `static_text_only`. Plus a fourth value `auto_select_slide_type` where the skill picks the strategy per carousel (cohesive content → uniform, varied → mixed, element_map declared → element_locked). The strategy field now has 4 values: `uniform` (default) / `mixed` / `element_locked` / `auto_select_slide_type`. Approach E (cascaded) is what `mixed` does internally.
+**Also added 2026-05-06 evening:** a `uniform` strategy (default) that doesn't appear in the original A-E framework. Uniform = all slides in a single carousel use the same type, skill picks the dominant type per carousel. This is the most common shape for editorial brands and testimonial roundups, and matches the implicit current behavior where every slide is `static_text_only`. The strategy field now has 3 values: `uniform` (default) / `mixed` / `element_locked`. Approach E (cascaded) is what `mixed` does internally.
 
 ### C. Narrative Prescribes
 Each narrative arc specifies type per slide. Brand provides assets.
