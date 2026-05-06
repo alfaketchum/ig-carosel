@@ -4,9 +4,21 @@ The hook is everything. If slide 1 doesn't stop the scroll, slides 2-6 don't exi
 
 > **Scope:** this file governs the hook slide (slide 1). Hooks almost always earn emphasis — the twist word is the payload. For emphasis rules on *non-hook* slides, see `SKILL.md` Step 5 "Emphasis Pattern" — emphasis is earned, not required.
 
+## Hook Theme Variation (grid-level rhythm)
+
+By default, the hook slide uses the `anchor` role theme — the brand's high-contrast primary surface. But brands can opt into hook theme variation in `.carousel.md` via `hook_themes_allowed`, which lists which roles slide 1 can use.
+
+When more than one theme is allowed:
+- **User picks per carousel** at prompt time: `--hook-theme dark` (or whatever role)
+- **Default if unspecified:** first role in `hook_themes_allowed`
+- **CTA slide stays anchor regardless** — the brand stamp closes every carousel
+- **If the picked hook theme is `alt`:** skip the mid-carousel `alt` variety break. Slide 1 IS the variety; doubling up weakens the rhythm.
+
+**Why this exists:** the IG profile grid shows only slide 1 of each carousel as the thumbnail. If every hook is the brand's primary color, the grid feels monotonous. Varying the hook theme across carousels gives the grid visual rhythm without diluting the brand stamp at the close.
+
 ## Hook Format
 
-- Use the `anchor` role theme (highest-contrast brand surface).
+- Use the role declared by `hook_themes_allowed` (or the user's `--hook-theme` flag); defaults to `anchor` (the highest-contrast brand surface).
 - **Top:** `.slide-label` — short contextual label (e.g. "Free Guide", "Hot Take", strategy name). Same uppercase label as every other slide.
 - **Middle:** `.slide-headline` — headline font, 1-3 sentences, **max ~25 words**. The 25-word cap is a hard ceiling, not a target — most hooks should land closer to 15-22 words. Going over loses the punch and starts reading like a paragraph. 1-3 key words inside `<em>` for emphasis (italic, highlight, or whatever `.carousel.md` specifies — colors cascade from `.slide--anchor`).
 - **Bottom:** `.slide-stat` — a short teaser line (5-10 words) that creates forward momentum. This is the "keep swiping" nudge.

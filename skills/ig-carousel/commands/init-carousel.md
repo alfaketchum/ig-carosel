@@ -67,6 +67,12 @@ These are not in DESIGN.md — ask the user (batch them into 2-3 questions, not 
   - `standard` (default) — desktop-friendly, less grid-dominant. Headline ~59px at 1080.
   - `loud` — mid-tier, readable on IG-grid thumbnails. Headline ~70px at 1080.
   - `massive` — thumbnail-first, dominates the grid (creator-led brands). Headline ~87px at 1080.
+- Hook theme variation — which theme roles can the HOOK slide use? Multiple roles here means the IG profile grid shows variety (different first-slide backgrounds across carousels) instead of every hook being the same brand color. The CTA slide always uses the anchor theme regardless.
+  - `anchor only` (default) — every hook uses the brand's primary surface. No grid variety.
+  - `anchor + body` — hook can be anchor OR body. Skill picks per carousel based on `--hook-theme` flag (default: first in list = anchor).
+  - `anchor + body + alt` — full variation. Hook can be any of the three theme roles. When `alt` is picked as the hook, the skill skips the mid-carousel `alt` variety break (slide 1 IS the variety).
+
+  Write the picked role names to `hook_themes_allowed` in the brand config. e.g., `[anchor]` (default), `[anchor, body]`, or `[anchor, body, alt]`.
 
 **Batch 3 (slide-type vocabulary):**
 

@@ -122,6 +122,20 @@ layout:
       weight: 600
       spacing: "0.03em"
 
+  # Hook theme variation — which themes are allowed for the HOOK slide
+  # (slide 1). Lets the IG profile grid show variety across carousels
+  # instead of every hook being the same brand color. Default: [anchor]
+  # (current behavior — every hook uses the brand's primary surface).
+  #
+  # User picks per carousel at prompt time:  --hook-theme dark
+  # If unspecified, defaults to the first theme in the list.
+  #
+  # NOTE: when the picked hook theme is `alt`, the skill skips the
+  # mid-carousel `alt` variety break (the slide 1 IS the variety).
+  # The CTA slide (last slide) always uses the brand's anchor theme.
+  hook_themes_allowed:
+    - anchor
+
   # Emphasis — how `<em>` inside headlines renders.
   # Each theme above declares its own `emphasis` color; this block picks
   # WHICH rendering mode uses that color.
