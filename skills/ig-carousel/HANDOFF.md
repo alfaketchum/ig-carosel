@@ -1,6 +1,6 @@
 ---
 status: active
-updated: 2026-05-05
+updated: 2026-05-06
 owner: AJ
 ---
 
@@ -15,6 +15,26 @@ This doc tracks what's shipped, what's open, and lingering questions. **Read thi
 3. **Skim `references/caption-writing.md`** as an example of how craft references are written
 4. **Look at `Looplinq/.carousel.md`** — a live, working brand config
 5. **Look at one carousel folder** — `Looplinq/ig-carousel/260505-ai-vs-social-media-managers/` for the latest end-to-end output (HTML + caption + 6 PNGs)
+
+## Recent activity (2026-05-06 session)
+
+Architectural cleanup. The export pipeline moved from per-brand to skill-resident; HANDOFF was corrected to match disk reality. No new content features.
+
+### Completed this session
+
+| Change | What |
+|---|---|
+| **`bin/export-slides.mjs` moved into the skill repo** | Was `Looplinq/ig-carousel/export-slides.mjs` — every brand needed their own copy. Now lives once at `carousel-skill/bin/export-slides.mjs`. Added `package.json` declaring `puppeteer ^24.40.0` at the carousel-skill root + `.gitignore` for `node_modules/`. Ran `npm install` once in the skill repo (33s; puppeteer reused cached Chromium from the prior Looplinq install — no fresh download). Resolves the architectural follow-up that was on the prior list. |
+| **All export-script references updated** | `SKILL.md` Step 8, `templates/carousel-config.md`, `Looplinq/.carousel.md`, `Looplinq/test-brands/nova/.carousel.md` now point at the absolute path `C:/Users/shah_/dev/carousel-skill/bin/export-slides.mjs`. The template uses an `<absolute-path-to>/...` placeholder so new brands know to substitute. Smoke-tested: invoked from `Looplinq/` cwd, the script resolves puppeteer from `carousel-skill/node_modules` correctly. |
+| **HANDOFF file tree corrected** | Tree under "Current file tree" had `agents/` nested inside `skills/ig-carousel/`. On disk, `agents/` lives at the repo root next to `skills/`. Tree now shows the real layout with the new `bin/` and `package.json` entries. |
+| **Looplinq lead-magnet scripts left in place (intentional)** | `Looplinq/ig-carousel/generate-guide.mjs` and `preview-pdf.mjs` are hardcoded Looplinq lead-magnet PDF tooling (brand colors, paths to a specific guide folder). Not part of the skill. They stay in Looplinq. |
+
+### Confirmed (not changed)
+
+- **Skill is junctioned into `~/.claude/skills/ig-carousel/`** via Windows directory junction (`mklink /J`, no admin needed). Edits in `C:\Users\shah_\dev\carousel-skill\skills\ig-carousel\` go live immediately — Claude Code reads through the junction. To remove: `Remove-Item "$HOME\.claude\skills\ig-carousel"` (only deletes the link, not the source).
+- **Postiz CLI is global, not bundled.** `npm install -g postiz`, creds at `~/.postiz/credentials.json`. The brand only declares `publishing.postiz.integration_id` in `.carousel.md`. Matches invariant #7 — "skill produces files; CLI handles auth, uploads, posting."
+
+---
 
 ## Recent activity (2026-05-05 session)
 
@@ -46,25 +66,31 @@ Three carousels generated end-to-end this session:
 ## Current file tree
 
 ```
-carousel-skill/skills/ig-carousel/
-├── SKILL.md                            ← orchestration, brand-agnostic
-├── HANDOFF.md                          ← this file
-├── references/
-│   ├── strategy-selection.md           ← 13 strategies + Specificity Rule
-│   ├── hook-formulas.md                ← Fear>Positive, conversation test, hook rules
-│   ├── structural-narratives.md        ← slide-by-slide arcs (uses roles, not theme names)
-│   ├── action-playbooks.md             ← 6 CTA playbooks (Comment/Share/Save/etc)
-│   └── caption-writing.md              ← IG caption craft (earn the "...more" tap)
-├── templates/
-│   └── carousel-config.md              ← `.carousel.md` template for new brands
-├── commands/
-│   ├── init-carousel.md                ← bootstrap config from DESIGN.md
-│   ├── sync-carousel.md                ← drift detection between DESIGN.md and config
-│   └── publish-carousel.md             ← Postiz publishing flow
-├── handoffs/
-│   └── image-generation.md             ← Phase 1 image support (designed, not built)
-└── agents/
-    └── ig-carousel.md                  ← empty stub
+carousel-skill/                         ← repo root
+├── package.json                        ← declares puppeteer (run `npm install` once)
+├── .gitignore
+├── bin/
+│   └── export-slides.mjs               ← Puppeteer screenshotter, brand-agnostic
+├── agents/
+│   └── ig-carousel.md                  ← empty stub
+└── skills/
+    └── ig-carousel/
+        ├── SKILL.md                    ← orchestration, brand-agnostic
+        ├── HANDOFF.md                  ← this file
+        ├── references/
+        │   ├── strategy-selection.md   ← 13 strategies + Specificity Rule
+        │   ├── hook-formulas.md        ← Fear>Positive, conversation test, hook rules
+        │   ├── structural-narratives.md← slide-by-slide arcs (uses roles, not theme names)
+        │   ├── action-playbooks.md     ← 6 CTA playbooks (Comment/Share/Save/etc)
+        │   └── caption-writing.md      ← IG caption craft (earn the "...more" tap)
+        ├── templates/
+        │   └── carousel-config.md      ← `.carousel.md` template for new brands
+        ├── commands/
+        │   ├── init-carousel.md        ← bootstrap config from DESIGN.md
+        │   ├── sync-carousel.md        ← drift detection between DESIGN.md and config
+        │   └── publish-carousel.md     ← Postiz publishing flow
+        └── handoffs/
+            └── image-generation.md     ← Phase 1 image support (designed, not built)
 ```
 
 ---
@@ -106,12 +132,13 @@ These are the principles the skill is built on. Every change should preserve the
   - **Instagram (instagram-standalone)**: `cmoszdgm901t8mq0y2su6zxe3` — wired in `.carousel.md`
   - **X**: `cmnqmxuwu006yoz0yvk7nwp6y` — connected, not yet wired
 
-### Export infrastructure (Looplinq-side)
-- Puppeteer-based export script at `ig-carousel/export-slides.mjs`
-- Reads from `{output-folder}/index.html` (fixed in this session — was reading wrong template)
+### Export infrastructure (skill-side, was Looplinq-side)
+- Puppeteer-based export script at `carousel-skill/bin/export-slides.mjs` (moved from `Looplinq/ig-carousel/` so brands no longer need their own copy)
+- `package.json` at carousel-skill root declares puppeteer; one `npm install` in carousel-skill replaces per-brand installs
+- Brand `.carousel.md` `layout.export_script` now points at the absolute path to `carousel-skill/bin/export-slides.mjs`
+- Reads from `{output-folder}/index.html` (fixed in the 2026-05-05 session — was reading wrong template)
 - Uses `scrollIntoView({behavior: 'instant'})` for reliable per-slide positioning
 - 1080×1350 viewport @ 2x retina (2160×2700 actual pixels)
-- node_modules installed; Puppeteer + Chromium ready
 
 ### Known good carousels
 - `Looplinq/ig-carousel/260505-ai-vs-social-media-managers/` — most recent, fully shipped (HTML + caption + 6 PNGs, no published.json)
@@ -150,11 +177,9 @@ Phase 1 image support — designed but NOT built. Settled on **vocabulary + casc
 
 ### Architectural follow-ups
 
-6. **Export script location.** Currently lives in `Looplinq/ig-carousel/export-slides.mjs` — every brand using the skill needs their own copy. Should move to `carousel-skill/bin/export-slides.mjs` so brands reference it via path. Cheap fix.
+6. **`agents/ig-carousel.md` is an empty stub.** Either delete (less noise) or build (would enable picasso-style discovery: 6 preview directions, user reacts, narrow). No urgency.
 
-7. **`agents/ig-carousel.md` is an empty stub.** Either delete (less noise) or build (would enable picasso-style discovery: 6 preview directions, user reacts, narrow). No urgency.
-
-8. **`published.json` annotation when post is deleted.** When a Postiz post gets deleted via `postiz posts:delete`, the carousel's `published.json` becomes a stale reference. Either add `deleted_at` annotations or build a `/sync-published` command that reconciles.
+7. **`published.json` annotation when post is deleted.** When a Postiz post gets deleted via `postiz posts:delete`, the carousel's `published.json` becomes a stale reference. Either add `deleted_at` annotations or build a `/sync-published` command that reconciles.
 
 ### Questions worth answering with usage
 
@@ -191,14 +216,15 @@ Pick by energy:
 | Light (5 min) | Re-publish the AI-vs-SMM carousel as a draft, verify it lands in Postiz cleanly. |
 | Medium (1-2 hr) | Build first-comment hashtags. Smallest valuable feature. |
 | Bigger (1 day) | Build the `stat` slide type (Phase 1 of image-generation handoff). Big visual variety win, no external dependencies. |
-| Architecture | Move `export-slides.mjs` into `carousel-skill/bin/`. Eliminates per-brand drift on the export pipeline. |
+| Architecture | Reconcile `published.json` when Postiz drafts get deleted (follow-up #7) — add a `deleted_at` annotation or build a `/sync-published` command. |
 | Real usage | Generate 3-5 more carousels on different topics. Surface what actually hurts. Update handoff with friction notes. |
 
 ---
 
 ## Status snapshot
 
-- **Skill repo**: `C:\Users\shah_\dev\carousel-skill\` — clean, latest commit `546e7a5`
-- **Brand repo**: `C:\Users\shah_\dev\Looplinq\` — clean (or near-clean — see uncommitted notes if any)
-- **Postiz**: authenticated, no active drafts (deleted at session end)
-- **Latest carousel**: `Looplinq/ig-carousel/260505-ai-vs-social-media-managers/` — local only, ready to publish
+- **Skill repo**: `C:\Users\shah_\dev\carousel-skill\` — last commit `a7822ac`. Uncommitted from 2026-05-06 session: `bin/export-slides.mjs` (new), `package.json` (new), `.gitignore` (new), edits to `SKILL.md`, `HANDOFF.md`, `templates/carousel-config.md`. `node_modules/` ignored.
+- **Brand repo**: `C:\Users\shah_\dev\Looplinq\` — uncommitted: deleted `ig-carousel/export-slides.mjs`; edited `.carousel.md` and `test-brands/nova/.carousel.md` (export_script path).
+- **Skill install**: directory junction at `~/.claude/skills/ig-carousel` → `~/dev/carousel-skill/skills/ig-carousel`. Live across all projects. `~/.claude/skills/` now has `graphify`, `picasso`, `ig-carousel`.
+- **Postiz**: authenticated, no active drafts (deleted at end of 2026-05-05 session).
+- **Latest carousel**: `Looplinq/ig-carousel/260505-ai-vs-social-media-managers/` — local only, ready to publish.

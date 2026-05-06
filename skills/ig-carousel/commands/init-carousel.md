@@ -54,7 +54,7 @@ These are not in DESIGN.md — ask the user (batch them into 2-3 questions, not 
 - Default CTA text (e.g. `Start Free`, `Join Waitlist`)
 - Product-signup CTA (e.g. `Get Started Today`) — optional, defaults to match the default CTA
 
-**Batch 2 (voice + emphasis):**
+**Batch 2 (voice + emphasis + typography):**
 - Hook style: `fear-first` (default) or `positive`?
 - Audience (one short phrase, e.g. "creators", "B2B founders", "indie devs")
 - Emphasis style on headline key words:
@@ -63,6 +63,10 @@ These are not in DESIGN.md — ask the user (batch them into 2-3 questions, not 
   - `italic-underline` — italic + underline
   - `highlight` — highlighter background behind the text (text stays normal headline color)
   - `italic+highlight` — italic text on a highlight
+- Typography scale — how dominant should slide text be?
+  - `standard` (default) — desktop-friendly, less grid-dominant. Headline ~59px at 1080.
+  - `loud` — mid-tier, readable on IG-grid thumbnails. Headline ~70px at 1080.
+  - `massive` — thumbnail-first, dominates the grid (creator-led brands). Headline ~87px at 1080.
 
 **Batch 3 (any TODOs from Step 2):**
 Ask only for tokens that were missing from DESIGN.md.
@@ -73,7 +77,9 @@ Load `templates/carousel-config.md` and substitute:
 
 - Every extracted value from Step 2
 - Every answer from Step 3
-- Keep the `layout` section at the template defaults (themes, typography, zones, emphasis, bottom_variants). The user can tweak later if needed.
+- Keep the `layout` section at the template defaults for `themes`, `zones`, and `bottom_variants`.
+- **Apply the chosen typography preset** (see "Typography Presets" below) to `layout.typography`. Replace the template's clamp values with the preset's values. Default to `standard` if the user skipped the question.
+- Apply the chosen emphasis style to `layout.emphasis.style`.
 
 ## Step 5 — Write `.carousel.md`
 
@@ -87,6 +93,25 @@ Show the user the generated file and ask:
 
 If they request edits, apply them and rewrite. Otherwise, done.
 
+## Typography Presets
+
+When the user picks a scale in Step 3 Batch 2, substitute the `layout.typography` block with these values. The clamp triple is `(min, vw-scaled, max)`. CTA pill text uses the mono font and stays constant across presets — pill text shouldn't grow with body copy.
+
+| Role | `standard` | `loud` | `massive` |
+|---|---|---|---|
+| `headline` | `clamp(24px, 5.5vw, 72px)` | `clamp(28px, 6.5vw, 84px)` | `clamp(34px, 8.1vw, 104px)` |
+| `label` | `clamp(10px, 2.2vw, 24px)` | `clamp(11px, 2.5vw, 27px)` | `clamp(13px, 2.8vw, 34px)` |
+| `body` | `clamp(12px, 2.6vw, 28px)` | `clamp(14px, 3vw, 32px)` | `clamp(17px, 3.6vw, 44px)` |
+| `list` | `clamp(10px, 2.2vw, 24px)` | `clamp(11px, 2.5vw, 27px)` | `clamp(13px, 2.8vw, 34px)` |
+| `cta` | `clamp(11px, 2vw, 22px)` | `clamp(11px, 2vw, 22px)` | `clamp(11px, 2vw, 22px)` |
+
+**Reference points (at 1080px export width):**
+- `standard` — 59px headline, 24px label, 28px body. Suits desktop-feed brands and serif-heavy editorial layouts.
+- `loud` — 70px headline, 27px label, 32px body. Middle-ground; readable on IG grid without dominating in-feed.
+- `massive` — 87px headline, 30px label, 39px body. Thumbnail-first: text fills the canvas. Best for creator-led brands where the IG grid is primary discovery.
+
+Headline / label / body / list scale together so the visual hierarchy stays intact across presets. CTA stays constant intentionally.
+
 ## Fallback: No DESIGN.md
 
 If Step 1 found nothing, skip token extraction and run the full question flow:
@@ -97,6 +122,8 @@ If Step 1 found nothing, skip token extraction and run the full question flow:
 4. Dark background hex (or say "derive" — default to `#0A0A0F`)
 5. Headline font, body font, mono font (offer Google Fonts suggestions if they don't know)
 6. Voice hook style + audience
-7. Logo SVG path (or "skip" — fallback to gradient circle)
+7. Emphasis style (`italic` default, or `bold` / `italic-underline` / `highlight` / `italic+highlight`)
+8. Typography scale (`standard` default, or `loud` / `massive` — see Typography Presets above)
+9. Logo SVG path (or "skip" — fallback to gradient circle)
 
-Then fill the template and write as in Step 5-6.
+Then fill the template, applying the chosen typography preset to `layout.typography`, and write as in Step 5-6.

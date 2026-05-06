@@ -56,7 +56,7 @@ Two different hooks, two different moments:
 | Medium | Visual — stops the scroll | Text — earns the expand |
 | Primary tool | Headline + emphasis + color | Sentence construction |
 | Available levers | Typography, layout, contrast | Only words |
-| Length | ~20 words max | ~80 chars (~15 words) max |
+| Length | ~25 words max | ~80 chars (~15 words) target |
 
 They should **complement, not duplicate.** The caption hook has to stand alone — if the reader only saw the caption hook and nothing else, would they want to see the carousel? If yes, it works.
 

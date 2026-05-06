@@ -8,9 +8,9 @@ The hook is everything. If slide 1 doesn't stop the scroll, slides 2-6 don't exi
 
 - Use the `anchor` role theme (highest-contrast brand surface).
 - **Top:** `.slide-label` — short contextual label (e.g. "Free Guide", "Hot Take", strategy name). Same uppercase label as every other slide.
-- **Middle:** `.slide-headline` — headline font, 1-2 sentences, max ~20 words. 1-3 key words inside `<em>` for emphasis (italic, highlight, or whatever `.carousel.md` specifies — colors cascade from `.slide--anchor`).
+- **Middle:** `.slide-headline` — headline font, 1-3 sentences, **max ~25 words**. The 25-word cap is a hard ceiling, not a target — most hooks should land closer to 15-22 words. Going over loses the punch and starts reading like a paragraph. 1-3 key words inside `<em>` for emphasis (italic, highlight, or whatever `.carousel.md` specifies — colors cascade from `.slide--anchor`).
 - **Bottom:** `.slide-stat` — a short teaser line (5-10 words) that creates forward momentum. This is the "keep swiping" nudge.
-- The hook should feel like a person talking, not a billboard. First-person and editorial tone beats punchy one-liners.
+- The hook should feel like a person talking, not a billboard. First-person and editorial tone beats punchy one-liners — but stay within the 25-word ceiling. Conversational and tight, not chatty and rambling.
 
 **Hook slide structure:**
 ```html

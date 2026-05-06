@@ -2,6 +2,8 @@
 
 **Trigger:** user says "publish carousel", "post this", "schedule the carousel", "ship it", or runs `/publish-carousel`.
 
+**Also handles draft promotion** — if user says "promote the draft", "schedule the draft", "fire the draft", or "make the draft live", jump to Step 10 instead of running the full publish flow.
+
 **Purpose:** take an exported carousel folder (`{output_dir}/YYMMDD-topic-slug/`) and submit it to Postiz as either a draft or a scheduled post on the brand's connected Instagram account. Captions, hashtags, and slide PNGs all come from files already produced by the skill.
 
 **Prerequisites:**
@@ -17,7 +19,7 @@ If any prerequisite is missing, stop and tell the user concretely what's missing
 This command expects ONE positional argument — the path to the carousel folder.
 
 ```
-/publish-carousel ig-carousel/260421-claude-design-economics/
+/publish-carousel ig-carousel/YYMMDD-topic-slug/
 ```
 
 Optional flags (parse from the user's message):
@@ -35,7 +37,7 @@ If no schedule flag is given, use `publishing.postiz.default_type` from `.carous
 3. Find all `slide-*.png` files. Sort lexically. Must be at least 1.
 4. Read `.carousel.md` from the project root. Confirm:
    - `publishing.postiz.enabled: true`
-   - `publishing.postiz.integration_id` is a non-empty string (e.g. `cmoszdgm901t8mq0y2su6zxe3`)
+   - `publishing.postiz.integration_id` is a non-empty string
 5. Confirm Postiz auth is valid: run `postiz auth:status`. If "Not authenticated," stop and tell the user to run `postiz auth:login`.
 
 If anything fails, abort and report the specific issue. Never attempt to publish a partial deliverable.
@@ -75,9 +77,9 @@ Always show this preview, even when `--dry-run` is set. Block until user confirm
 ```
 Publish Preview
 ───────────────
-Folder:        ig-carousel/260421-claude-design-economics/
-Account:       Looplinq (instagram-standalone)
-Integration:   cmoszdgm901t8mq0y2su6zxe3
+Folder:        ig-carousel/{topic-slug}/
+Account:       {brand.name} ({publishing.postiz.integration_type})
+Integration:   {publishing.postiz.integration_id}
 Type:          draft (or schedule)
 Schedule:      2026-04-22T14:00:00Z (in 60 minutes)
 Slides:        6 PNGs (slide-01.png ... slide-06.png)
@@ -142,7 +144,7 @@ Example for the LeCun carousel:
 postiz posts:create \
   -c "Yann LeCun spent 3 years calling generative AI a dead end..." \
   -m "https://uploads.postiz.com/abc.png,https://uploads.postiz.com/def.png,..." \
-  -i "cmoszdgm901t8mq0y2su6zxe3" \
+  -i "{publishing.postiz.integration_id}" \
   -s "2026-04-22T14:00:00Z" \
   -t draft \
   --settings '{"__type":"instagram-standalone","post_type":"post","is_trial_reel":false,"collaborators":[]}'
@@ -159,7 +161,7 @@ postiz posts:create \
      "tags": [],
      "posts": [
        {
-         "integration": { "id": "cmoszdgm901t8mq0y2su6zxe3" },
+         "integration": { "id": "{publishing.postiz.integration_id}" },
          "value": [
            {
              "content": "<caption with \\n newlines>",
@@ -196,24 +198,28 @@ Run the actual command. Postiz returns:
 ]
 ```
 
-Write a `published.json` to the carousel folder with:
+Write a `published.json` to the carousel folder with a `runs[]` array — first run on initial publish, additional runs appended on subsequent promotions or re-publishes:
+
 ```json
 {
-  "submitted_at": "<current-ISO-timestamp>",
-  "type": "draft",
-  "schedule": "2026-04-22T14:00:00Z",
-  "integration_id": "cmoszdgm901t8mq0y2su6zxe3",
-  "postiz_response": [
-    { "postId": "post-123", "integration": "integration-456" }
-  ],
-  "uploaded_media": [
-    { "slide": "slide-01.png", "id": "e639003b-...", "path": "https://uploads.postiz.com/...png" },
-    ...
+  "runs": [
+    {
+      "submitted_at": "<current-ISO-timestamp>",
+      "type": "draft",
+      "schedule": "2026-04-22T14:00:00Z",
+      "integration_id": "{publishing.postiz.integration_id}",
+      "postiz_response": [
+        { "postId": "post-123", "integration": "integration-456" }
+      ],
+      "uploaded_media": [
+        { "slide": "slide-01.png", "id": "e639003b-...", "path": "https://uploads.postiz.com/...png" }
+      ]
+    }
   ]
 }
 ```
 
-This is the audit trail. Even if the same carousel is published twice, both `published.json` versions get committed to git, so the history is auditable.
+This is the audit trail. Step 10 (promotion) appends another entry; re-publishes append another. The `runs[]` array preserves the full history. Older flat-object manifests (pre-runs format) should be migrated on first re-write: wrap the existing object in `{ "runs": [<existing>, <new>] }`.
 
 ## Step 9 — Confirmation message
 
@@ -222,7 +228,7 @@ Tell the user:
 ```
 ✅ Published.
 
-  Carousel:      ig-carousel/260421-claude-design-economics/
+  Carousel:      ig-carousel/{topic-slug}/
   Type:          draft (review in Postiz dashboard)
   Schedule:      2026-04-22T14:00:00Z
   Postiz post:   post-123
@@ -231,7 +237,72 @@ Tell the user:
   Manifest written to: published.json
 ```
 
-If type was `draft`, remind the user that they must promote the draft to scheduled in Postiz's UI for it to actually publish. If type was `schedule`, the post is committed and will fire at the given time.
+If type was `draft`, remind the user the draft is sitting until promoted. They have two options: promote it via the Postiz UI (one click), or ask Claude to do it via API — see Step 10.
+
+## Step 10 — Promoting an existing draft (re-entry path)
+
+When a draft already exists for this carousel (recorded in `published.json` under a previous run with `type: "draft"`), the user can ask to promote it without re-uploading media or re-running the full flow. Two paths depending on whether the schedule time changes.
+
+### Path A — In-place promotion (keep original schedule)
+
+Use when the user is happy with the original schedule time the draft was created with (typically `now + default_offset_minutes`).
+
+```bash
+postiz posts:status <postId> --status schedule
+```
+
+Returns `{ "id": "<postId>", "state": "QUEUE" }`. The post is now queued and will fire at its original `date`. **No upload, no recreate, no media re-cost.**
+
+`posts:status` has only `--status` — there is NO option to change the schedule time. If the user needs a different fire time, use Path B.
+
+### Path B — Delete + recreate (change schedule time)
+
+Use when the user wants to fire `--now`, `--at "<ISO>"`, or any time other than what the draft was created with.
+
+1. Read `published.json` → get the most recent draft `postId` and the `uploaded_media` array.
+2. `postiz posts:delete <postId>` — removes the draft (`✅ Post <id> deleted successfully!`).
+3. Build a new `post.json` with:
+   - `type: "schedule"`
+   - `date: <new ISO timestamp>` — for `--now`, use `Date.now() + 60_000`
+   - `posts[0].value[0].image` — reuse the `uploaded_media` from the prior run verbatim. PNG URLs are still live; do NOT re-upload.
+   - Caption + integration + settings unchanged.
+4. `postiz posts:create --json <path-to-post.json>` — submit the new scheduled post.
+
+This costs 2 API calls (delete + create) instead of 8+ (re-upload all media + create). Stays well within the 30 req/hour limit.
+
+### Updating the manifest after Step 10
+
+Append a new entry to `runs[]` in `published.json`:
+
+```json
+{
+  "submitted_at": "<now>",
+  "type": "schedule",
+  "schedule": "<fire-time>",
+  "integration_id": "...",
+  "postiz_response": [{ "postId": "<new-id>", "integration": "..." }],
+  "promoted_from": "<old-draft-id>",
+  "promotion_path": "A | B",
+  "notes": "<one-line context, e.g. 'replaced draft via --now'>"
+}
+```
+
+Path A entries reuse the same `postId` (it didn't change — just the state did), so include `state_change: "draft -> schedule"` to disambiguate. Path B entries get a new `postId` and reference the deleted one in `promoted_from`.
+
+### Confirmation message for Step 10
+
+```
+✅ Promoted draft to scheduled.
+
+  Carousel:      ig-carousel/<folder>/
+  Path:          A — in-place  (or  B — delete + recreate)
+  Postiz post:   <postId>
+  Replaced:      <old-postId>  (Path B only)
+  Schedule:      <ISO>
+  Slides:        7 (media reused — no rate-limit hit)
+
+  Manifest appended to: published.json
+```
 
 ## Safety rails — what this command MUST NEVER do
 
@@ -248,8 +319,11 @@ If type was `draft`, remind the user that they must promote the draft to schedul
 | `Not authenticated` | Token expired or missing | Run `postiz auth:login` |
 | `Rate limit exceeded` | More than 30 req/hr | Wait 1 hour or use a different hour window |
 | Upload returns non-JSON | Network issue or large file | Retry once; if still failing, check `postiz upload <file>` manually |
-| Post submitted but doesn't appear in IG | Postiz draft must be scheduled in their UI | Open Postiz dashboard, find the draft, schedule it |
+| Post submitted but doesn't appear in IG | Postiz draft must be scheduled in their UI | Open Postiz dashboard, find the draft, schedule it — or run Step 10 Path A from Claude |
 | `Settings validation failed` | `__type` or `post_type` mismatch | Check `integration_type` in `.carousel.md` matches `postiz integrations:list` output |
+| User wants to change a draft's fire time | `posts:status` cannot update the date | Use Step 10 Path B (delete + recreate) |
+| `posts:status` returns "not found" | Draft was already deleted or `postId` is stale | Check `published.json` for the latest `postId`; if missing, run the full publish flow from Step 1 |
+| `posts:delete` returns "not found" | Same as above | Treat the draft as already gone; proceed to recreate if needed |
 
 ## Multi-platform (deferred — Phase 2+)
 

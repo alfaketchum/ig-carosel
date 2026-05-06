@@ -45,7 +45,9 @@ layout:
   aspect_ratio: "1080/1350"         # slide aspect
   default_slide_count: 6
   output_dir: "ig-carousel"
-  export_script: "ig-carousel/export-slides.mjs"
+  # Absolute path to bin/export-slides.mjs in the carousel-skill repo.
+  # The script and its puppeteer dependency live there, not per-brand.
+  export_script: "<absolute-path-to>/carousel-skill/bin/export-slides.mjs"
 
   # The 3 vertical zones inside every slide, top to bottom.
   # Rename or reorder if your brand uses a different anatomy.
@@ -89,6 +91,10 @@ layout:
       bottom_text: "#8C8C8C"
 
   # Typography scale — role → font/size/weight/spacing.
+  # If you ran /init-carousel, the values below were chosen by preset
+  # (standard | loud | massive). See commands/init-carousel.md →
+  # Typography Presets for the full table. Hand-editors can tweak
+  # the clamp() triples directly; the skill reads them verbatim.
   typography:
     headline:
       font: "{design.headline_font}"

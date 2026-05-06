@@ -238,8 +238,8 @@ The caption.md lives alongside the HTML and (once exported) the PNGs. Human-read
 **Folder naming:** `{layout.output_dir}/YYMMDD-topic-slug/` (e.g. `ig-carousel/260409-nikki-glaser-confession/`)
 
 **Export process:**
-1. Run the export script at the path from `.carousel.md` (`layout.export_script`, default `ig-carousel/export-slides.mjs`):
-   `node ig-carousel/export-slides.mjs "ig-carousel/YYMMDD-topic-slug/"`
+1. Run the export script at the path from `.carousel.md` (`layout.export_script`). The script lives in the carousel-skill repo at `bin/export-slides.mjs` (puppeteer is installed there, not per-brand). Invoke it with the carousel folder as argument:
+   `node "<carousel-skill>/bin/export-slides.mjs" "ig-carousel/YYMMDD-topic-slug/"`
 2. The script uses Puppeteer to screenshot each slide at 1080x1350 @ 2x retina (2160x2700 actual pixels). It reads `{output-folder}/index.html` (not a root-level template).
 3. Output: `slide-01.png`, `slide-02.png`, etc.
 4. Verify at least slide 1 and the last slide visually using the Read tool. Check:
