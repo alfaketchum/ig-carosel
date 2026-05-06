@@ -8,7 +8,20 @@ The vocabulary of slide layouts the skill can produce. Each type is a distinct s
 
 ## How the skill picks a type per slide
 
-Cascade (Approach E from `handoffs/image-generation.md`):
+Two layers of decision:
+
+1. **Brand declares which types are *enabled*** (`slide_types_enabled` in `.carousel.md`) — the constraint.
+2. **Brand declares the *strategy*** (`slide_type_strategy`) — how the skill picks WITHIN a single carousel from the enabled set.
+
+### Strategy modes
+
+| Mode | What the skill does | When to use |
+|---|---|---|
+| **`uniform`** (default) | All slides in a single carousel use the same type. Skill picks one type per carousel based on dominant content signals. | Editorial brands, testimonial roundups, brands that want strong structural rhythm. The Looplinq founder-contrast carousel is implicitly uniform (all `static_text_only`). |
+| **`mixed`** | Each slide picks its own type independently from the enabled set, based on content. Cascade applies (see below). | Storytelling brands where layout variety serves the narrative. |
+| **`element_locked`** | Specific type per theme role. Brand declares `slide_type_element_map: { anchor: X, body: Y, alt: Z }`. | Brands wanting predictable rhythm — anchor always one shape, body always another. |
+
+### The cascade (when strategy is `mixed`)
 
 ```
 Brand .carousel.md   →  enables  [static_text_only, captioned_image, big_number]
@@ -21,6 +34,13 @@ User prompt          →  optional per-slide override
 ```
 
 If no signal favors a richer type, fall back to `static_text_only`.
+
+### User per-carousel override
+
+Regardless of brand strategy, the user can override at prompt time:
+- `--uniform pull_quote` — force all slides this type for one carousel
+- `--mixed` — let the skill pick per slide (overrides brand uniform default)
+- per-slide override: `slide 3 → big_number`
 
 ---
 

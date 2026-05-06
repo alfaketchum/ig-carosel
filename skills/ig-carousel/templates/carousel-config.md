@@ -162,6 +162,23 @@ layout:
   slide_types_enabled:
     - static_text_only
 
+  # Strategy — how the skill picks slide types WITHIN a single carousel.
+  # Only matters when more than one type is enabled.
+  #   uniform        — all slides in a carousel use the same type (default)
+  #                    skill picks the dominant type per carousel from content
+  #   mixed          — each slide picks independently from enabled types
+  #                    based on content signals; max content fit, less rhythm
+  #   element_locked — specific type per theme role (see slide_type_element_map)
+  slide_type_strategy: uniform
+
+  # Only used when slide_type_strategy: element_locked
+  # Map theme roles (anchor / body / alt) to specific slide types.
+  # Each mapped type MUST appear in slide_types_enabled above.
+  # slide_type_element_map:
+  #   anchor: static_text_only
+  #   body: captioned_image
+  #   alt: pull_quote
+
   # Image sources — only relevant if any image-using types are enabled.
   # Phase 1 supports `user` (paths provided per-slide). Phase 2: `local_library`.
   images:
