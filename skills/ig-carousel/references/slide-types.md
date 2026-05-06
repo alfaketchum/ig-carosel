@@ -6,6 +6,24 @@ The vocabulary of slide layouts the skill can produce. Each type is a distinct s
 
 > **Always implicit:** `static_text_only` is always enabled — it's the universal fallback when no other type fits. Brands declare which *additional* types to allow.
 
+## Universal element names
+
+Each slide type has **elements** (named content slots) placed in **zones** (positions on the canvas). Where the layout supports a vertical 3-stack — which is most types — the element names are universal:
+
+| Element | Default zone | What goes here |
+|---|---|---|
+| `header` | top | Small uppercase label / contextual tag (or, for Pull Quote, a decorative quote mark) |
+| `body` | middle | The main content — text, image, big number, or quoted text. Whatever the type's defining element is. |
+| `footer` | bottom | Stat / caption / context line / attribution / CTA pill |
+
+Two types break this pattern with type-specific element names because their spatial structure isn't a vertical stack:
+
+- **Side-by-Side Comparison** uses `header / body_left / body_right / footer` (4 elements; body splits into 2 cells)
+- **Text Over Image** uses `image / body` (2 elements on z-stacked layers; no top/bottom split)
+- **Full-Frame Image** uses `image / footer` (1 full-bleed element + 1 optional corner)
+
+Within element specs below, the **Zone** column tells you where the element sits; the **Content** column tells you what kind of content the element holds.
+
 ## How the skill picks a type per slide
 
 Two layers of decision:
@@ -48,19 +66,27 @@ Regardless of brand strategy, the user can override at prompt time:
 
 ### 1. Static Text Only (`static_text_only`)
 
-**Layout:** label / headline / bottom-stat (current default — every slide today).
+**Layout pattern:** vertical 3-stack.
 
 **Zones:**
 ```
 ┌──────────────────────────┐
 │                          │
-│        LABEL             │  ← .slide-label (uppercase, small)
+│        TOP               │  ← header element
 │                          │
-│        HEADLINE          │  ← .slide-headline (large serif)
+│        MIDDLE            │  ← body element
 │                          │
-│        BOTTOM            │  ← .slide-stat / list / pill / bullets
+│        BOTTOM            │  ← footer element
 └──────────────────────────┘
 ```
+
+**Elements:**
+
+| Element | Zone | Content | Required | CSS class | Notes |
+|---|---|---|---|---|---|
+| `header` | top | uppercase label | yes | `.slide-label` | Inherits `layout.typography.label` |
+| `body` | middle | text headline | yes | `.slide-headline` | Inherits `layout.typography.headline`. 1-3 words may use `<em>` |
+| `footer` | bottom | stat / list / pill / bullets | yes | `.slide-stat` etc. | Picks from `layout.bottom_variants` based on content |
 
 **When to pick:** hooks, narrative middle slides, CTAs. The default shape; if no other type fits, this one does. Always enabled.
 
@@ -72,22 +98,30 @@ Regardless of brand strategy, the user can override at prompt time:
 
 ### 2. Captioned Image (`captioned_image`)
 
-**Layout:** label / image / caption. Image sits in the body zone where the headline would normally go.
+**Layout pattern:** vertical 3-stack (body slot is an image instead of headline text).
 
 **Zones:**
 ```
 ┌──────────────────────────┐
-│        LABEL             │
+│        TOP               │  ← header element
 │                          │
 │  ┌────────────────────┐  │
 │  │                    │  │
-│  │      IMAGE         │  │  ← .slide-image (4:3 or 16:9, rounded)
+│  │      MIDDLE        │  │  ← body element (image)
 │  │                    │  │
 │  └────────────────────┘  │
 │                          │
-│       CAPTION            │  ← .slide-caption (1-2 lines, sans body)
+│        BOTTOM            │  ← footer element (caption)
 └──────────────────────────┘
 ```
+
+**Elements:**
+
+| Element | Zone | Content | Required | CSS class | Notes |
+|---|---|---|---|---|---|
+| `header` | top | uppercase label | yes | `.slide-label` | Same as Static Text Only's header |
+| `body` | middle | image | yes | `.slide-image` | Default 4:3 aspect, rounded corners, `object-fit: cover` |
+| `footer` | bottom | text caption (1-2 sentences) | yes | `.slide-caption` | Sans body type; explains what the reader is looking at |
 
 **When to pick:** content references a specific visual artifact (screenshot, photo, chart) AND the visual is *supporting* the argument, not the argument itself. Caption explains what the reader is looking at.
 
@@ -114,22 +148,31 @@ Regardless of brand strategy, the user can override at prompt time:
 
 ### 3. Full-Frame Image (`full_frame_image`)
 
-**Layout:** image fills the canvas; minimal caption pinned to the bottom corner (or absent entirely).
+**Layout pattern:** full-bleed + corner overlay.
 
 **Zones:**
 ```
 ┌──────────────────────────┐
 │                          │
 │                          │
-│        IMAGE             │  ← fills entire 1080×1350 canvas
+│         FULL             │  ← image element (entire canvas)
 │       (full bleed)       │
 │                          │
 │                          │
 │  ┌─────────┐             │
-│  │ caption │             │  ← optional, bottom-left or absent
+│  │ CORNER  │             │  ← footer element (optional, pinned)
 │  └─────────┘             │
 └──────────────────────────┘
 ```
+
+**Elements:**
+
+| Element | Zone | Content | Required | CSS class | Notes |
+|---|---|---|---|---|---|
+| `image` | full | image | yes | `.slide-image` (background) | Fills entire 1080×1350 canvas. `object-fit: cover` |
+| `footer` | corner | text caption (5-10 words) | no | `.slide-caption` | Optional. Pinned to bottom-left or bottom-right with semi-transparent pill background for legibility |
+
+**Note on element names:** this type doesn't have a `header` or `body` slot — the image *is* the content. The optional caption uses `footer` for naming consistency with other types (it's the closer/annotation), even though it sits in a corner rather than a bottom band.
 
 **When to pick:** the visual IS the message. Product demos. Hero shots. Before/after where the photo carries the argument with no annotation needed.
 
@@ -163,20 +206,30 @@ Regardless of brand strategy, the user can override at prompt time:
 
 ### 4. Text Over Image (`text_over_image`)
 
-**Layout:** image as background, headline overlaid on top with a darkening scrim for legibility.
+**Layout pattern:** z-stacked layers (image background + foreground text).
 
 **Zones:**
 ```
 ┌──────────────────────────┐
 │                          │
 │   ╔══════════════════╗   │
-│   ║                  ║   │  ← image (full bleed)
-│   ║   HEADLINE TEXT  ║   │  ← overlaid, large serif, white
+│   ║   BACKGROUND     ║   │  ← image element (z-layer below)
+│   ║                  ║   │
+│   ║   FOREGROUND     ║   │  ← body element (z-layer above, with scrim)
 │   ║                  ║   │
 │   ╚══════════════════╝   │
 │                          │
 └──────────────────────────┘
 ```
+
+**Elements:**
+
+| Element | Zone | Content | Required | CSS class | Notes |
+|---|---|---|---|---|---|
+| `image` | background | image | yes | `.slide-image` (z-layer below) | Full-bleed. CSS scrim (gradient or color overlay) is mandatory for legibility |
+| `body` | foreground | text headline | yes | `.slide-headline` (z-layer above) | Large serif, white text, optional `text-shadow` for additional legibility |
+
+**Note on element names:** this type doesn't have `header` or `footer` — the image is the visual context, the body is the message. Optional small label or attribution can be added to the foreground but isn't part of the canonical spec.
 
 **When to pick:** editorial covers, mood/tone slides, hooks where the imagery sets emotional context for the headline. The image gives feeling; the text gives meaning.
 
@@ -205,21 +258,28 @@ Regardless of brand strategy, the user can override at prompt time:
 
 ### 5. Pull Quote (`pull_quote`)
 
-**Layout:** large opening quote-mark / quoted text / attribution.
+**Layout pattern:** vertical 3-stack (header is decorative quote-mark instead of label).
 
 **Zones:**
 ```
 ┌──────────────────────────┐
 │                          │
-│         "                │  ← .slide-quote-mark (huge serif)
+│         TOP              │  ← header element (decorative quote-mark)
 │                          │
-│   "the quoted text       │  ← .slide-quote-text (large serif, italic)
-│    in italic, centered"  │
+│        MIDDLE            │  ← body element (italic quoted text)
 │                          │
-│   — Source Name          │  ← .slide-quote-attribution (small sans)
-│      Source Title         │
+│                          │
+│        BOTTOM            │  ← footer element (attribution)
 └──────────────────────────┘
 ```
+
+**Elements:**
+
+| Element | Zone | Content | Required | CSS class | Notes |
+|---|---|---|---|---|---|
+| `header` | top | decorative quote-mark `"` | yes | `.slide-quote-mark` | Huge serif, theme.emphasis color. NOT a label here — the visual punctuation marks this as a quote |
+| `body` | middle | quoted text | yes | `.slide-quote-text` | Large serif, italic by convention. Differs from skill's "italics = emphasis only" rule — entire quote is italic |
+| `footer` | bottom | attribution (`— Name, Title`) | yes | `.slide-quote-attribution` | Small sans body, lower opacity. Optional small avatar to the left |
 
 **When to pick:** testimonials, statements from named people, direct quotes from articles or interviews. Anywhere the *who said it* matters as much as *what they said*.
 
@@ -254,21 +314,28 @@ Regardless of brand strategy, the user can override at prompt time:
 
 ### 6. Big Number (`big_number`)
 
-**Layout:** label / huge statistic / context line.
+**Layout pattern:** vertical 3-stack (body is a huge statistic).
 
 **Zones:**
 ```
 ┌──────────────────────────┐
-│      LABEL               │
+│       TOP                │  ← header element
 │                          │
 │                          │
-│        $42M              │  ← .slide-big-number (HUGE serif)
+│       MIDDLE             │  ← body element (huge stat)
 │                          │
 │                          │
-│   in 90 days from        │  ← .slide-context (sans, 1-2 lines)
-│   one LinkedIn post.     │
+│       BOTTOM             │  ← footer element (context line)
 └──────────────────────────┘
 ```
+
+**Elements:**
+
+| Element | Zone | Content | Required | CSS class | Notes |
+|---|---|---|---|---|---|
+| `header` | top | uppercase label | yes | `.slide-label` | Same as Static Text Only's header |
+| `body` | middle | a single stat / number / percentage | yes | `.slide-big-number` | Huge serif, ~1.5-2× the brand's standard headline size. Color from `theme.emphasis` |
+| `footer` | bottom | context line (1-2 sentences) | yes | `.slide-context` | Sans body, ~70-80% width. Anchors the number with what it means |
 
 **When to pick:** data slides, results, single-stat reveals. The number is the punch; the context anchors it. One number per slide — never two.
 
@@ -297,23 +364,34 @@ Regardless of brand strategy, the user can override at prompt time:
 
 ### 7. Side-by-Side Comparison (`side_by_side_comparison`)
 
-**Layout:** two columns with mirrored content (A vs B), often with a verdict line below.
+**Layout pattern:** grid (top + middle-split + bottom).
 
 **Zones:**
 ```
 ┌──────────────────────────┐
-│      LABEL               │
+│         TOP              │  ← header element
 │                          │
 │   ┌─────────┬─────────┐  │
 │   │         │         │  │
-│   │    A    │    B    │  │  ← .slide-compare-a, .slide-compare-b
-│   │         │         │  │     each can hold text or image
+│   │ MIDDLE  │ MIDDLE  │  │  ← body_left + body_right (2 cells)
+│   │  LEFT   │ RIGHT   │  │
 │   │         │         │  │
 │   └─────────┴─────────┘  │
 │                          │
-│      VERDICT             │  ← .slide-verdict (optional)
+│        BOTTOM            │  ← footer element (verdict, optional)
 └──────────────────────────┘
 ```
+
+**Elements:**
+
+| Element | Zone | Content | Required | CSS class | Notes |
+|---|---|---|---|---|---|
+| `header` | top | uppercase label | yes | `.slide-label` | Same as Static Text Only's header |
+| `body_left` | middle-left | text and/or image | yes | `.slide-compare-a` | The "A" side. Can hold text-only, image-only, or text+image |
+| `body_right` | middle-right | text and/or image | yes | `.slide-compare-b` | The "B" side. Must be structurally symmetric to `body_left` |
+| `footer` | bottom | verdict / takeaway line | no | `.slide-verdict` | Optional. Sans body, often the punchline of the comparison |
+
+**Note on element names:** breaks the `header / body / footer` triplet because the body is split into 2 cells. Names are `body_left` and `body_right` to keep the body-prefix consistent.
 
 **When to pick:** Founder Contrast carousels (Creator A vs Creator B), before/after pairs, this-vs-that arguments. Anywhere the structural pairing IS the message.
 
@@ -350,21 +428,29 @@ Regardless of brand strategy, the user can override at prompt time:
 
 ### 8. Numbered List (`numbered_list`)
 
-**Layout:** label / vertical stack of numbered items / context line.
+**Layout pattern:** vertical 3-stack (body is a stack of numbered items).
 
 **Zones:**
 ```
 ┌──────────────────────────┐
-│      LABEL               │
+│        TOP               │  ← header element
 │                          │
-│   ① First item           │  ← .slide-list-item (numbered)
-│   ② Second item          │
+│   ① First item           │
+│   ② Second item          │  ← body element (stack of 3-5 items)
 │   ③ Third item           │
 │   ④ Fourth item          │
 │                          │
-│   Context line below.    │  ← .slide-context (optional)
+│        BOTTOM            │  ← footer element (optional context)
 └──────────────────────────┘
 ```
+
+**Elements:**
+
+| Element | Zone | Content | Required | CSS class | Notes |
+|---|---|---|---|---|---|
+| `header` | top | uppercase label | yes | `.slide-label` | Same as Static Text Only's header |
+| `body` | middle | 3-5 numbered items | yes | `.slide-list-item` (each) | Each item is `[number, text]` pair. Number uses headline serif color (`theme.emphasis`); text uses body sans |
+| `footer` | bottom | context line | no | `.slide-context` | Optional. Sans body, anchors what the list is for |
 
 **When to pick:** listicle slides where the sequence matters (top 5, ranked items, ordered steps). One slide can hold 3-5 items; for more, break into multiple Numbered List slides or use multiple Static Text Only slides with one item each.
 
