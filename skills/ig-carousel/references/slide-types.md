@@ -1,14 +1,14 @@
 # Slide Types
 
-The vocabulary of slide layouts the skill can produce. Each type is a structural shape with its own slots (named content holders) and a layout pattern that positions those slots on the canvas.
+A "slide type" in this skill is just **a primitive + a slot list, given a name**. The 8 types listed below are *presets* — starting configurations brands can paste into `.carousel.md` and edit. They're not architecturally special; the skill's load-bearing concepts are the four layout **primitives** and the **slot system**, not the named types.
 
-A brand declares which types it allows in `.carousel.md` (`slide_types_enabled`) and how each one is configured. The skill picks the right type per slide from that set based on content signals and the chosen strategy (`slide_type_strategy`).
+A brand declares which types it allows in `.carousel.md` (`slide_types_enabled`) — an object map of `{type-key → {pattern, slots}}`. The skill picks the right type per slide from that set based on content signals and the chosen strategy (`slide_type_strategy`).
 
 > **Naming convention:** display names use Title Case ("Captioned Image"); YAML keys use snake_case (`captioned_image`); CSS classes use kebab-case (`.slide--captioned-image`).
 
 > **Always implicit:** `static_text_only` is always enabled — universal fallback when no other type fits. Brands declare which *additional* types to allow.
 
-> **No universal element vocab.** Each type owns its own slot class names. The shared abstraction is the **layout pattern** (vertical 3-stack, grid 2-col, full-bleed, z-stacked) — not the names of the slots inside it. Slot class names are brand-configurable; pattern names are skill-shipped.
+> **Compose your own.** Brands aren't limited to the 8 presets. Any combination of `{primitive + slot list + name}` is a valid slide type. Want a `cover_quote` (z_stacked + image background + serif quote foreground)? Define it in your `.carousel.md` with that key — the skill renders it the same way it renders any preset. The presets exist as proven starting points, not as a closed taxonomy.
 
 ## Layout Primitives
 
@@ -65,9 +65,17 @@ Regardless of brand strategy, the user can override at prompt time:
 
 ---
 
-## The 8 Types — Canonical Defaults
+## Preset Library
 
-Each entry below shows the recommended `pattern` and `slots` config. Brands paste the YAML block into `.carousel.md` under `slide_types_enabled.{type}` and edit fields as needed. The pattern can be swapped — e.g. `captioned_image` defaults to `vertical_3_stack` but a brand can rebind it to `grid_2col` for image-on-left, caption-on-right.
+The 8 entries below are **starting points** — proven `{primitive + slots}` combinations a brand can paste into `.carousel.md` under `slide_types_enabled.{type-key}` and edit. They are not architectural constraints. A brand can:
+
+- Use a preset as-is (paste, no edits)
+- Use a preset and edit slot fields (typography role, size multiplier, max_words, etc.)
+- **Swap the pattern** (e.g. rebind `captioned_image` from `vertical_3_stack` to `grid_2col` for image-on-left, caption-on-right)
+- **Add slots within a position** (e.g. add a kicker above the headline; add a CTA pill below the stat — the slot zone stacks them automatically; see `references/slide-build.md` "Slot zones")
+- **Compose a new type from scratch** (pick a primitive, list slots, give it a key — no skill changes needed)
+
+The names below are conventional, not reserved. Rename `static_text_only` → `text_card` if that fits your mental model better. The skill reads whatever keys exist in `slide_types_enabled`.
 
 ### 1. Static Text Only (`static_text_only`)
 
@@ -253,14 +261,15 @@ numbered_list:
 
 These apply to whichever type the skill picks per slide:
 
-1. **Always include `static_text_only`** in any brand's enabled set. It's the universal fallback. Implicit even if not declared.
-2. **Type is per-slide, not per-carousel** (when strategy is `mixed`). A single carousel can mix Static Text Only / Captioned Image / Pull Quote slides freely as long as those types are enabled.
-3. **Type-class on the slide div.** Generated HTML uses `<div class="slide slide--{role} slide--{type-key-with-dashes}">` — both role and type classes. Role drives colors; type drives layout.
+1. **Always include a `static_text_only` (or equivalent)** in any brand's enabled set as a universal fallback. Implicit if not declared. The key can be renamed; what matters is that *some* type with simple text-only slots exists for cases where richer types don't fit.
+2. **Type is per-slide, not per-carousel** (when strategy is `mixed`). A single carousel can mix any enabled types freely.
+3. **Two classes on the slide div.** Generated HTML uses `<div class="slide slide--{role} slide--{type-key-with-dashes}">` — role drives colors; type drives layout.
 4. **Themes still apply.** Every type respects the brand's `anchor` / `body` / `alt` theme colors. A `pull_quote` slide can be on the dark `body` theme.
 5. **Per-type emphasis behavior.** Most types use `<em>` the standard way (italic on payload words). Pull Quote is the exception — entire quote text is italic by convention; emphasis inside falls back to bold or underline.
-6. **Image sources are user-provided in Phase 1.** Per-prompt path/URL OR `slide-NN-source.{ext}` filename in the carousel folder. AI generation, local libraries: Phase 2+.
-7. **Class names are brand-configurable.** The `class:` values in the canonical defaults above are recommendations. Brands can rename any class in their `.carousel.md` slot list. The skill reads the brand's slot config to know what classes to emit in HTML and CSS.
-8. **Patterns are skill-shipped.** Brands cannot invent new layout primitives. They can only bind enabled types to the four primitives above.
+6. **Image sources are user-provided in Phase 1.** Per-prompt path/URL OR `slide-NN-source.{ext}` filename in the carousel folder. AI generation, local libraries: Phase 2+. See `references/image-sources.md`.
+7. **Slot class names are brand-configurable.** The `class:` values in the presets above are recommendations. Brands can rename any class in their `.carousel.md` slot list — the skill reads the brand's slot config to know what to emit. CSS pattern recipes target zone wrappers (`.slot-zone--{position}`), not slot classes, so renames don't break layout.
+8. **Multiple slots can share a position.** Stack a kicker above the headline, a stat + a pill in the bottom zone — list both slots with the same `position` value in `slots[]`; they'll stack inside the zone wrapper. See `references/slide-build.md` "Slot zones."
+9. **Primitives are skill-shipped (today).** Currently 4 primitives exist; brands bind any number of types to them but can't write a new primitive directly. **Future:** `/steal-carousel` will extract new primitives by reverse-engineering observed carousels and propose them for vocabulary expansion (see `handoffs/steal-carousel.md`). When that ships, primitives become a growing set rather than a fixed one. Until then, force-fit novel layouts into existing primitives or flag the gap.
 
 ## Build phasing (from `handoffs/image-generation.md`)
 

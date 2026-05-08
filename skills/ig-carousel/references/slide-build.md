@@ -104,18 +104,40 @@ Each slide gets **two CSS classes** on its outer div: `.slide--{role}` (colors) 
 }
 ```
 
-**Spacer rule.** If a slide has no bottom slot, append an empty `<div class="slide-spacer"></div>` at the end to preserve the 3-zone distribution. Without the spacer, content drifts to the bottom.
+**Slot zones.** Each position declared by a primitive becomes a `<div class="slot-zone slot-zone--{position}">` wrapper in the rendered HTML. The wrapper holds one or more slots that target that position. CSS rules target the zone wrapper, not individual slot classes — this means the brand can rename slot classes freely without breaking layout, and **multiple slots at the same position stack naturally inside the zone**.
+
+Always emit a zone div for every position the primitive declares, even if it has no slots in this slide type. The empty zone preserves the layout's spatial distribution (replaces the older `.slide-spacer` workaround).
 
 ```html
+<!-- Static text only — three zones, single slot per zone -->
 <div class="slide slide--body slide--static-text-only">
-  <div class="slide-label">The Problem</div>
-  <h2 class="slide-headline">...</h2>
-  <div class="slide-spacer"></div>  <!-- required when no bottom slot -->
+  <div class="slot-zone slot-zone--top">
+    <div class="slide-label">The Problem</div>
+  </div>
+  <div class="slot-zone slot-zone--middle">
+    <h2 class="slide-headline">...</h2>
+  </div>
+  <div class="slot-zone slot-zone--bottom">
+    <p class="slide-stat">...</p>
+  </div>
 </div>
-```
 
-```css
-.slide-spacer { margin-top: auto; }
+<!-- Same primitive, multi-slot per zone — stack a kicker above the headline,
+     and a stat + a CTA pill in the bottom zone. The CSS doesn't change. -->
+<div class="slide slide--body slide--static-text-only">
+  <div class="slot-zone slot-zone--top">
+    <div class="slide-kicker">Behind the scenes</div>
+    <div class="slide-label">Step 3</div>
+  </div>
+  <div class="slot-zone slot-zone--middle">
+    <h2 class="slide-headline">...</h2>
+    <p class="slide-subhead">...</p>
+  </div>
+  <div class="slot-zone slot-zone--bottom">
+    <p class="slide-stat">...</p>
+    <a class="cta-pill" href="#">...</a>
+  </div>
+</div>
 ```
 
 **Horizontal alignment.** Text centered, content block centered. This is the established carousel convention — feeds read better with centered copy than left-aligned. Do not left-align headlines except in `grid_2col` cells, where left-align inside the cell can be appropriate.
@@ -124,26 +146,41 @@ Each slide gets **two CSS classes** on its outer div: `.slide--{role}` (colors) 
 
 ## Per-Pattern CSS Recipes
 
-The skill ships four layout primitives. Each defines a structural shape, a set of valid `position` values, and the CSS recipe below. A slide type binds to one primitive (declared in `slide_types_enabled.{T}.pattern`) — substitute the brand's slot class names from `slots[].class` into the recipe.
+The skill ships four layout primitives. Each defines a structural shape, a set of valid `position` values, and the CSS recipe below. **Recipes target `.slot-zone--{position}` wrappers, not slot classes** — slot class names are brand-controlled and shouldn't appear in pattern CSS.
+
+A slide type binds to one primitive (declared in `slide_types_enabled.{T}.pattern`). Inside each zone, slots flow in the order declared in `slots[]` for that position, separated by the zone's `gap`.
 
 ### `vertical_3_stack`
 
 **Positions:** `top`, `middle`, `bottom`
 
-**Shape:** centered vertical column. Top slot pins to top of content area, bottom slot pins to bottom, middle slot fills the remaining space. Powered by `margin-top: auto` magic.
+**Shape:** centered vertical column. Top zone pins to top of content area, bottom zone pins to bottom, middle zone fills the remaining space. Powered by `margin-top: auto` on the wrappers.
 
 ```css
-/* Per-type rules — substitute {top-class} / {middle-class} / {bottom-class} with the
-   class names declared in slide_types_enabled.{T}.slots (matched by position) */
-
-.slide--{type-key} .{top-class} {
+.slide--{type-key} .slot-zone--top {
   margin-top: auto;
   margin-bottom: 6%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2%;
 }
-.slide--{type-key} .{bottom-class} {
+.slide--{type-key} .slot-zone--middle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4%;
+}
+.slide--{type-key} .slot-zone--bottom {
   margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2%;
 }
 ```
+
+Empty zones still take a div and the auto-margins still apply, so a slide with only top + middle (no bottom slots) keeps the zones distributed correctly without a spacer.
 
 **Used by (canonical defaults):** `static_text_only`, `captioned_image`, `pull_quote`, `big_number`, `numbered_list`.
 
@@ -162,35 +199,60 @@ The skill ships four layout primitives. Each defines a structural shape, a set o
   gap: 4%;
   align-items: center;
 }
-.slide--{type-key} .{top-class},
-.slide--{type-key} .{bottom-class} {
+.slide--{type-key} .slot-zone--top,
+.slide--{type-key} .slot-zone--bottom {
   grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2%;
   text-align: center;
 }
-.slide--{type-key} .{left-class}  { grid-column: 1; }
-.slide--{type-key} .{right-class} { grid-column: 2; }
+.slide--{type-key} .slot-zone--left,
+.slide--{type-key} .slot-zone--right {
+  display: flex;
+  flex-direction: column;
+  gap: 2%;
+}
+.slide--{type-key} .slot-zone--left  { grid-column: 1; }
+.slide--{type-key} .slot-zone--right { grid-column: 2; }
 ```
 
-**Used by (canonical defaults):** `side_by_side_comparison`. Brands may also bind `captioned_image` to this primitive.
+**Used by (canonical defaults):** `side_by_side_comparison`. Brands may also bind `captioned_image` to this primitive for an image-on-left, caption-on-right layout.
 
 ### `full_bleed_corner`
 
 **Positions:** `full`, `corner`
 
-**Shape:** image fills the entire 1080×1350 canvas; optional small annotation pinned to a corner with a semi-transparent background pill for legibility.
+**Shape:** image (or other media) fills the entire 1080×1350 canvas; optional small annotation pinned to a corner with a semi-transparent background pill for legibility.
 
 ```css
 .slide--{type-key} {
   padding: 0;
-  background-image: var(--slide-image);
-  background-size: cover;
-  background-position: center;
   position: relative;
+  overflow: hidden;
 }
-.slide--{type-key} .{corner-class} {
+.slide--{type-key} .slot-zone--full {
+  position: absolute;
+  inset: 0;
+}
+.slide--{type-key} .slot-zone--full > img,
+.slide--{type-key} .slot-zone--full > picture {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.slide--{type-key} .slot-zone--corner {
   position: absolute;
   bottom: 6%;
   left: 6%;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+}
+.slide--{type-key} .slot-zone--corner > * {
   background: rgba(0, 0, 0, 0.6);
   color: var(--white);
   padding: 0.5em 1em;
@@ -208,14 +270,34 @@ The skill ships four layout primitives. Each defines a structural shape, a set o
 
 ```css
 .slide--{type-key} {
-  background-image:
-    linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)),
-    var(--slide-image);
-  background-size: cover;
-  background-position: center;
+  position: relative;
   color: var(--white);
 }
-.slide--{type-key} .{foreground-class} {
+.slide--{type-key} .slot-zone--background {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+.slide--{type-key} .slot-zone--background > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.slide--{type-key} .slot-zone--background::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5));
+}
+.slide--{type-key} .slot-zone--foreground {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 ```

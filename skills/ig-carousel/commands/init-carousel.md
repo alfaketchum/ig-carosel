@@ -4,6 +4,16 @@
 
 **Purpose:** bootstrap a new `.carousel.md` config at the project root by reading whatever design system documentation exists, extracting tokens, and prompting only for the carousel-specific fields that aren't in DESIGN.md.
 
+## What you're configuring
+
+Before running questions, hold the architecture in mind so you can explain it crisply if the user asks:
+
+- **Layout primitives** (4, skill-shipped) — `vertical_3_stack`, `grid_2col`, `full_bleed_corner`, `z_stacked`. The structural shapes any slide can take. Brands cannot invent new ones.
+- **Slot types** (preset library, customizable) — named `{primitive + slot list}` configurations. The skill ships 8 starter presets (`static_text_only`, `captioned_image`, `pull_quote`, `big_number`, `side_by_side_comparison`, `numbered_list`, `full_frame_image`, `text_over_image`). Brands can use them as-is, edit slot fields, swap the primitive, or compose their own from scratch.
+- **Image sources** (4 options, configurable per brand) — `user` (paths/files), `placeholder` (Picsum + brief), `generated` (AI gen, opt-in), `chart` (CSS-rendered, opt-in).
+
+The init flow asks the user to pick from existing presets in most cases. Composing custom types from primitives is documented but advanced.
+
 ## Preconditions
 
 1. If `.carousel.md` already exists at the project root — **stop and confirm**:
@@ -47,7 +57,7 @@ Also set the `design.design_md` pointer to the DESIGN.md path you found — serv
 
 ## Step 3 — Ask for Carousel-Only Fields
 
-These are not in DESIGN.md — ask the user (batch them into 2-3 questions, not 6):
+These are not in DESIGN.md — ask the user (batch them, not 6 separate prompts):
 
 **Batch 1 (brand):**
 - Brand URL for the CTA pill (e.g. `looplinq.com`)
@@ -74,39 +84,68 @@ These are not in DESIGN.md — ask the user (batch them into 2-3 questions, not 
 
   Write the picked role names to `hook_themes_allowed` in the brand config. e.g., `[anchor]` (default), `[anchor, body]`, or `[anchor, body, alt]`.
 
-**Batch 3 (slide-type vocabulary):**
+**Batch 3 (slide-type presets):**
 
-The skill ships an 8-type vocabulary of slide layouts (full spec in `references/slide-types.md`). Brands declare which types their carousels are allowed to use. **`static_text_only` is always implicit** — it's the universal fallback. The user picks which *additional* types to enable.
+The skill ships an 8-preset starter library — proven `{primitive + slot list}` configurations that brands paste into `.carousel.md` and edit. Full spec in `references/slide-types.md`. Brands aren't limited to these 8; any combination of `{primitive + slots + name}` is valid (advanced mode below). For most brands, the presets are enough.
 
 Ask:
 
-> Which slide-type layouts should this brand's carousels use? Pick any combination — the skill will choose per-slide based on content. (Reply with names, or `text-only` for static-text-only carousels, or `all` to enable everything.)
+> Which slide-layout presets should this brand's carousels use? Pick any combination — the skill will choose per-slide based on content. (Reply with names, `text-only` for static-text-only carousels, `all` to enable everything, or `custom` to compose your own.)
 
 Show this list as the menu:
 
-| Type | What it is |
-|---|---|
-| Captioned Image | Image with a caption underneath. Image is the body; caption explains it. |
-| Full-Frame Image | Image fills the entire slide. Optional small corner caption. |
-| Text Over Image | Image as background, headline overlaid with a darkening scrim. |
-| Pull Quote | Big quote mark, italic quoted text, attribution. For testimonials and direct quotes. |
-| Big Number | Huge stat as the focal point, label above, context below. For data slides. |
-| Side-by-Side Comparison | Two columns (A vs B), often with a verdict line. For Founder Contrast and before/after. |
-| Numbered List | Ordered stack of items with numbers. For listicle slides. |
+| Preset | What it is | Primitive |
+|---|---|---|
+| Static Text Only | Label + headline + bottom (stat / list / pill / bullets). Default fallback. | `vertical_3_stack` |
+| Captioned Image | Header (sentence) + image + footer (small forward teaser). | `vertical_3_stack` |
+| Full-Frame Image | Image fills the entire slide, optional small corner caption. | `full_bleed_corner` |
+| Text Over Image | Image as background, headline overlaid with a darkening scrim. | `z_stacked` |
+| Pull Quote | Big quote mark, italic quoted text, attribution. For testimonials and direct quotes. | `vertical_3_stack` |
+| Big Number | Huge stat as the focal point, label above, context below. For data slides. | `vertical_3_stack` |
+| Side-by-Side Comparison | Two columns (A vs B), often with a verdict line. For Founder Contrast and before/after. | `grid_2col` |
+| Numbered List | Ordered stack of items with numbers. For listicle slides. | `vertical_3_stack` |
 
 Parse the user's reply:
 - Match by display name (case-insensitive, partial-match OK — "quote" → `pull_quote`, "side by side" → `side_by_side_comparison`).
 - `text-only` → enabled set is just `[static_text_only]`.
-- `all` → all 8 types enabled.
-- Always include `static_text_only` in the enabled set regardless of user input.
+- `all` → all 8 presets enabled.
+- `custom` → branch to the **Custom-type composer** sub-flow below.
+- Always include `static_text_only` (or an equivalent text-only preset) in the enabled set as the universal fallback.
 
-If the user picks any image-using types (`captioned_image`, `full_frame_image`, `text_over_image`, or `side_by_side_comparison`), follow up with one more question:
+**Custom-type composer (advanced):**
 
-> What's the image source for this brand? `user` (you'll provide image paths per slide), `local_library` (a folder of brand assets the skill can reference by name), or `none for now` (Phase 1: only `user` is wired up — pick this if you're enabling image types but not ready to provide images yet).
+If the user picks `custom`, walk them through composing one or more types:
 
-Default to `user`. `local_library` is documented but not yet built (Phase 2).
+1. Ask for the type name (e.g. `cover_quote`, `feature_card`, `metric_card`).
+2. Pick a primitive from the four available — show the primitives table with positions:
+   - `vertical_3_stack` — positions: `top`, `middle`, `bottom`
+   - `grid_2col` — positions: `top`, `left`, `right`, `bottom`
+   - `full_bleed_corner` — positions: `full`, `corner`
+   - `z_stacked` — positions: `background`, `foreground`
+3. For each slot, ask:
+   - Slot class name (e.g. `slide-quote-mark`, `slide-feature-image`)
+   - Position (must be one valid for the chosen primitive)
+   - Content type (`text` / `image` / `number` / `decorative`)
+   - Typography role (`label` / `headline` / `body` / `list` / `cta`) — only for text slots
+   - Optional: `size_multiplier`, `max_words`, `aspect`, `radius`, `shadow` (see slot field → CSS mapping in `references/slide-build.md`)
+4. Repeat 2–3 for additional custom types if the user wants more.
 
-**Then ask the strategy question** — only if the user enabled more than just `static_text_only`. If they're text-only, skip this; the strategy doesn't matter when there's only one type:
+If composing one custom type takes more than 4 slots or feels heavy, suggest the user start by pasting a preset and editing — `references/slide-types.md` has each preset's YAML ready to copy.
+
+**Image-source question** — only ask if the user enabled any image-using preset (`captioned_image`, `full_frame_image`, `text_over_image`) OR composed a custom type with an image slot:
+
+> Which image sources should this brand support? The skill normalizes every source to a local file `slide-NN-source.{ext}` so the HTML is source-agnostic — you can mix and match.
+>
+> - **`user`** (always available) — you supply image paths or drop files into the carousel folder. Best for product screenshots and brand-owned imagery.
+> - **`placeholder`** (default, free) — Picsum or solid blocks fill any slot you haven't supplied. Skill writes a brief file telling you what to source. Lets you draft a carousel before sourcing assets.
+> - **`generated`** (opt-in, costs $$) — AI image generation via nano-banana / Midjourney / DALL-E. Best for storytelling carousels needing photographic imagery the brand doesn't own. Disabled by default; flip on when ready and add an API key.
+> - **`chart`** (opt-in, free) — SVG charts/diagrams rendered using brand tokens. Narrow use case; likely promoted to its own slide type later. Off by default.
+>
+> Default config: `user` + `placeholder` enabled, `generated` + `chart` declared but disabled. You can flip them later. Press enter to accept the default, or specify which sources to enable.
+
+Write the answer into the `images:` top-level block per the schema in `references/image-sources.md`.
+
+**Strategy question** — only if the user enabled more than one preset (or composed multiple custom types). If they're text-only single-type, skip; the strategy doesn't matter.
 
 > How should the skill mix slide types within a single carousel?
 >
@@ -131,11 +170,12 @@ Load `templates/carousel-config.md` and substitute:
 
 - Every extracted value from Step 2
 - Every answer from Step 3
-- Keep the `layout` section at the template defaults for `themes` and `bottom_variants`. (Zones are no longer brand-level; they're owned per slide type in `references/slide-types.md`.)
+- Keep the `layout` section at the template defaults for `themes` and `bottom_variants`.
 - **Apply the chosen typography preset** (see "Typography Presets" below) to `layout.typography`. Replace the template's clamp values with the preset's values. Default to `standard` if the user skipped the question.
 - Apply the chosen emphasis style to `layout.emphasis.style`.
-- **Write the `slide_types_enabled` block** based on Batch 3. Always include `static_text_only` first, then any types the user picked. If the user picked image-using types, also write the `images.sources` value from the follow-up question.
+- **Write the `slide_types_enabled` block** as an object map. For each enabled preset, paste the canonical default YAML from `references/slide-types.md` "Preset Library" → the corresponding entry. For each custom type, write the user-specified `{pattern, slots}` config.
 - **Write the `slide_type_strategy` field** based on Batch 3 (`uniform` default, or `mixed` / `element_locked`). If `element_locked`, also write the `slide_type_element_map` with the user's role→type mapping.
+- **Write the top-level `images:` block** based on the image-source question. Default config: `user` + `placeholder` enabled with sensible defaults; `generated` + `chart` declared with `enabled: false`.
 
 ## Step 5 — Write `.carousel.md`
 
@@ -168,6 +208,8 @@ When the user picks a scale in Step 3 Batch 2, substitute the `layout.typography
 
 Headline / label / body / list scale together so the visual hierarchy stays intact across presets. CTA stays constant intentionally.
 
+Slot fields can override these per-slot via `size_multiplier` (e.g. `captioned_image`'s header uses `typography_role: headline, size_multiplier: 0.55` — sentence-feel, not full-billboard). See `references/slide-build.md` "Slot field → CSS mapping."
+
 ## Fallback: No DESIGN.md
 
 If Step 1 found nothing, skip token extraction and run the full question flow:
@@ -180,9 +222,9 @@ If Step 1 found nothing, skip token extraction and run the full question flow:
 6. Voice hook style + audience
 7. Emphasis style (`italic` default, or `bold` / `italic-underline` / `highlight` / `italic+highlight`)
 8. Typography scale (`standard` default, or `loud` / `massive` — see Typography Presets above)
-9. Slide types — which layouts to enable (see Batch 3 menu in Step 3 above; `static_text_only` always implicit; `text-only` / `all` / comma-separated names accepted)
-10. Image source if any image-using types were picked (`user` default; `local_library` not yet built)
+9. Slide-type presets — which to enable (see Batch 3 menu in Step 3 above; `static_text_only` always implicit; `text-only` / `all` / comma-separated names / `custom` accepted)
+10. Image sources if any image-using preset/custom-type was picked (`user` + `placeholder` defaults; `generated` + `chart` opt-in)
 11. Slide-type strategy: `uniform` (default) / `mixed` / `element_locked`. If `element_locked`, ask the role→type mapping.
 12. Logo SVG path (or "skip" — fallback to gradient circle)
 
-Then fill the template, applying the chosen typography preset to `layout.typography` and writing the `slide_types_enabled` block, and proceed as in Step 5-6.
+Then fill the template, applying the chosen typography preset to `layout.typography`, writing the `slide_types_enabled` object map, and writing the `images:` block. Proceed as in Step 5–6.
