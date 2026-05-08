@@ -40,6 +40,14 @@ Extract and bind these tokens (all referenced as `{brand.*}` / `{design.*}` in t
 
 **Rule:** nothing hardcoded in this file is brand-specific. If you find yourself writing a literal brand name or color value into the output, pull it from the config instead.
 
+## Long-source workflow (optional)
+
+If the user provided a long source (article, thread, transcript, paper ≥ ~800 words), spawn the **source-distillation subagent** before doing Steps 2–7 yourself. The subagent parses + drafts in isolation and returns a small structured plan; main context picks up at Step 5 to render HTML.
+
+→ See `agents/distill-source.md` for when to spawn, the inputs to pass, the output format, and the skip conditions.
+
+For short prompts where the angle is already framed, skip the subagent and proceed through Steps 2–7 in main context.
+
 ## Step 2: Pick the Strategy
 
 Read the user's content (article, thread, topic, bullets, or vibe). Pick the strategy that makes the strongest carousel for this content — don't ask the user which to use.
@@ -62,216 +70,13 @@ Each strategy has a slide-by-slide arc that specifies slide count and theme per 
 
 ## Step 5: Build the Slides
 
-All brand-level layout values — theme color mappings, typography scale, emphasis rules, allowed bottom-element variants, and which slide types are enabled — live in `.carousel.md` under the `layout` key. **Per-type zones and element specs live in `references/slide-types.md`** — not in the brand config. Each type owns its own anatomy. **Do not hardcode layout values in generated slides; pull theme/typography values from config and zone/element values from slide-types.md.** The schema below is universal; values are per-brand.
+Pull theme/typography values from `.carousel.md` `layout`. Pull slot/pattern config from `.carousel.md` `slide_types_enabled.{T}`. Substitute brand slot class names into the layout primitive's CSS recipe. Each slide div carries two classes: `.slide--{role}` (colors) and `.slide--{type-key-with-dashes}` (layout).
 
-### Slide Themes
+→ See `references/slide-build.md` for the full execution detail: theme & typography resolution, slide type resolution, hook theme resolution, slide anatomy, per-pattern CSS recipes, emphasis pattern, and bottom element variants for `static_text_only`.
 
-Resolve `layout.themes` from `.carousel.md`. Each theme declares a **role** (how references and narratives refer to it) plus a set of color layers:
+→ See `references/slide-types.md` for canonical defaults per type (paste-into-`.carousel.md` starter configs + when-to-pick guidance).
 
-- `role` — one of `anchor` (high-contrast brand surface for hooks + CTAs), `body` (readable dark surface for middle content), `alt` (secondary surface for variety). Brands can add more roles as needed.
-- `background` — slide background color
-- `label` — color of the uppercase label
-- `headline` — color of the main headline
-- `emphasis` — color applied to `<em>` inside headlines (text or highlight bg, depending on `layout.emphasis.style`)
-- `bottom_text` — color of the stat/bullets in the bottom zone
-
-Render each theme as a CSS class **named by role**, not by theme key: `.slide--{role}`. This keeps `references/` and generated HTML aligned — a brand renaming theme keys doesn't break the references. Every role should appear at most once across themes.
-
-### Typography Scale
-
-Resolve `layout.typography` from `.carousel.md`. Each role (`headline`, `label`, `body`, `list`, `cta`) declares `font`, `size`, `weight`, `spacing`, and optionally `transform`. Apply verbatim to the matching CSS class.
-
-Load fonts via Google Fonts (or local `@font-face` if the design system specifies local files).
-
-### Slide Type Resolution
-
-Before building each slide, resolve which slide **TYPE** it should be. This is a separate axis from theme/role:
-- **Theme (role)** controls colors — `anchor` / `body` / `alt`
-- **Type** controls layout structure — `static_text_only` / `captioned_image` / `pull_quote` / etc.
-
-Resolution flow per slide:
-
-1. **Read `slide_types_enabled`** from `.carousel.md`. The constraint — only types in this list can appear in this brand's carousels. `static_text_only` is implicit even if not listed.
-
-2. **Read `slide_type_strategy`** from `.carousel.md` (default `uniform`):
-   - **`uniform`** — pick ONE type for the entire carousel. Skill chooses from `slide_types_enabled` based on dominant content signals; same type for every slide.
-   - **`mixed`** — pick a type per slide independently. Skill reads each slide's content and picks from `slide_types_enabled`. Different slides may have different types.
-   - **`element_locked`** — read `slide_type_element_map` from `.carousel.md`. Each role maps to a fixed type. Pick by role.
-
-3. **Per-slide override:** if the user prompt specifies a type for a specific slide ("slide 3 → big_number"), use that — overrides the strategy.
-
-4. **Fallback:** if no signal favors a richer type, use `static_text_only`. The universal default.
-
-5. **For each slide resolved as type T:**
-   - Look up T's spec in `references/slide-types.md` for zones, elements, and CSS skeleton
-   - Output `<div class="slide slide--{role} slide--{type-key-with-dashes}">` — TWO classes: role drives colors, type drives layout
-   - Type key uses dashes for CSS: `static_text_only` → `slide--static-text-only`, `captioned_image` → `slide--captioned-image`
-
-**Content signals for `mixed` strategy:**
-- "show / image of / screenshot of X" → `captioned_image` or `full_frame_image` (depending on whether the image is supporting context vs the message itself)
-- Specific stat / number / percentage is the payload → `big_number`
-- Direct quote with attribution → `pull_quote`
-- A vs B / two creators / before-and-after → `side_by_side_comparison`
-- Ranked items / numbered list → `numbered_list`
-- Image as backdrop with text overlay → `text_over_image`
-- Otherwise → `static_text_only`
-
-### Hook Theme Resolution
-
-The hook slide (slide 1) doesn't necessarily use the brand's anchor theme. Resolve which theme it uses:
-
-1. **Read `hook_themes_allowed`** from `.carousel.md` (default: `[anchor]`).
-2. **Check user prompt for `--hook-theme {role}` flag.** If specified AND the role appears in `hook_themes_allowed`, use it.
-3. **Otherwise:** use the first role in `hook_themes_allowed` (typically `anchor`).
-4. **If the resolved hook theme is `alt`:** skip the mid-carousel `alt` variety break. Slide 1 IS the variety; doubling up weakens the rhythm.
-5. **CTA slide (last slide):** always uses `anchor` regardless of the hook theme. Brand stamp closes every carousel consistently.
-
-This lets brands create IG-grid variety across carousels without diluting the brand stamp at the close. See `references/hook-formulas.md` for the full pattern.
-
-### Slide Anatomy
-
-Each slide gets **two CSS classes** on its outer div: `.slide--{role}` (colors) and `.slide--{type-key}` (layout). The role-class colors come from `layout.themes` resolution (above). The type-class layout comes from each type's spec in `references/slide-types.md`.
-
-```html
-<!-- Static Text Only on body theme -->
-<div class="slide slide--body slide--static-text-only">...</div>
-
-<!-- Captioned Image on anchor theme -->
-<div class="slide slide--anchor slide--captioned-image">...</div>
-```
-
-#### Universal slide CSS (applies to all types)
-
-These properties hold across every type — the `.slide` class is the shared base:
-
-```css
-.slide {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  padding: 14% 10%;          /* generous internal padding */
-  position: relative;
-  /* Note: justify-content varies by type — vertical 3-stack uses center;
-     full-bleed types may set padding: 0 to allow the image to fill */
-}
-```
-
-#### Per-type layout (the rest)
-
-For each type, look up the layout spec in `references/slide-types.md`:
-
-| Type | Layout pattern | Key CSS |
-|---|---|---|
-| `static_text_only` | vertical 3-stack | `justify-content: center`, `margin-top: auto` on label and bottom |
-| `captioned_image` | vertical 3-stack | same flex pattern; `body` slot is an `<img>` instead of `<h2>` |
-| `full_frame_image` | full-bleed + corner | `padding: 0`; image as background or `<img>` filling canvas; caption absolute-positioned |
-| `text_over_image` | z-stacked layers | image as background with linear-gradient scrim; text overlaid |
-| `pull_quote` | vertical 3-stack | quote-mark in header; italic body; attribution footer |
-| `big_number` | vertical 3-stack | huge serif body (1.5-2× headline); context footer |
-| `side_by_side_comparison` | grid | header on top, 2-column grid for body, verdict footer |
-| `numbered_list` | vertical 3-stack | header; body is a `<ol>`-style stack; optional context footer |
-
-**Vertical 3-stack family pattern (Static Text Only, Captioned Image, Big Number, Pull Quote, Numbered List):**
-
-```css
-.slide--static-text-only,
-.slide--captioned-image,
-.slide--big-number,
-.slide--pull-quote,
-.slide--numbered-list {
-  justify-content: center;
-}
-.slide-label,           /* header zone (top) */
-.slide-quote-mark {
-  margin-top: auto;
-  margin-bottom: 6%;
-}
-.slide-bottom,          /* footer zone (bottom) */
-.slide-caption,
-.slide-quote-attribution,
-.slide-context {
-  margin-top: auto;
-}
-```
-
-**CRITICAL — spacer div for slides without a footer element.** Body-role slides that carry only header + body (no footer) MUST include an empty spacer at the end to preserve the 3-zone distribution. Applies to all vertical-3-stack types:
-
-```html
-<div class="slide slide--body slide--static-text-only">
-  <div class="slide-label">The Problem</div>
-  <h2 class="slide-headline">...</h2>
-  <div class="slide-spacer"></div>  <!-- required when no footer element -->
-</div>
-```
-
-```css
-.slide-spacer { margin-top: auto; }
-```
-
-Without the spacer, `margin-top: auto` on the header collapses and content drifts to the bottom of the slide.
-
-**Horizontal alignment:** text centered, content block centered. This is the established carousel convention (feeds read better with centered copy than left-aligned). Do not left-align headlines except in `side_by_side_comparison`'s body cells where left-align inside the cell can be appropriate.
-
-**For non-vertical-3-stack types** (Full-Frame Image, Text Over Image, Side-by-Side Comparison) — see each type's CSS skeleton in `references/slide-types.md`. The vertical-3-stack pattern above does NOT apply to those.
-
-### Emphasis Pattern
-
-Resolve `layout.emphasis.style` from `.carousel.md`. Emphasis colors live on each theme (`theme.emphasis`), not in a separate lookup.
-
-**Emphasis is earned, not required.** Only wrap a word or phrase in `<em>` when it is the *payload* of the sentence — a specific number, proper noun, twist word, or claim that lands differently without the emphasis.
-
-**The earned test:** remove the `<em>`. If the sentence still works the same way, drop it. If the sentence loses its punch, keep it.
-
-**Distribution across a 6-slide carousel:**
-- **Hook slide (slide 1)** — almost always earns emphasis. The twist word is the payload.
-- **Proof / reveal / stat slides** — usually earn emphasis. The specific number, name, or term is the payload.
-- **Argument slides** — usually do NOT earn emphasis. The whole sentence is the point; italicizing a phrase inside it dilutes the argument.
-- **CTA slide** — earns emphasis only when a specific action word or keyword is the payload (e.g. a comment keyword). Share prompts often don't need it.
-- **Expected count:** 2-4 slides with emphasis out of 6. Never zero (hook earns at least one); never all six (the pattern becomes decoration and loses its meaning).
-
-If you find yourself adding `<em>` just because a slide "looks bare" without it, that's the AI-slop signal — drop it.
-
-**Write `<em>` with no class.** Let CSS cascade from the parent `.slide--{role}` do the work:
-
-```css
-/* Generated per theme/role */
-.slide--anchor em { /* applies theme.anchor.emphasis */ }
-.slide--body em   { /* applies theme.body.emphasis */ }
-.slide--alt em    { /* applies theme.alt.emphasis */ }
-```
-
-How `theme.emphasis` is applied depends on `layout.emphasis.style`:
-
-| Style | How `theme.emphasis` is used | CSS shape |
-|---|---|---|
-| `italic` (default) | text color | `font-style: italic; color: {theme.emphasis}` |
-| `bold` | text color | `font-weight: 700; color: {theme.emphasis}` |
-| `italic-underline` | text color | `font-style: italic; text-decoration: underline; color: {theme.emphasis}` |
-| `highlight` | background (highlighter effect) | `background: {theme.emphasis}; padding: 0.05em 0.2em; box-decoration-break: clone` |
-| `italic+highlight` | structured `{text, bg}` on each theme | italic text on highlight |
-
-For `italic+highlight`, each theme's `emphasis` becomes an object: `emphasis: { text: "{design.white}", bg: "{design.primary_dark}" }`.
-
-**Output in all cases:** `<em>key words</em>` — no class, no inline style. The theme class on the parent slide resolves everything.
-
-### Bottom Element Variants (Static Text Only)
-
-**Scope:** this section applies only to slides typed `static_text_only`. Other slide types have their own footer/bottom element defined per-type in `references/slide-types.md`:
-- `captioned_image` → caption text
-- `full_frame_image` → optional corner caption
-- `pull_quote` → attribution
-- `big_number` → context line
-- `numbered_list` → optional context line
-- `side_by_side_comparison` → verdict line
-- `text_over_image` → no footer
-
-For Static Text Only slides, resolve `layout.bottom_variants` from `.carousel.md`. The allowed components for the bottom zone (default: `stat`, `list`, `pill`, `bullets`). The skill picks one per slide based on content + selected action:
-
-- **Stat text** — `<p class="slide-stat">…</p>`
-- **List (struck-through)** — `<div class="tool-list"><span class="tool-item">…</span></div>`
-- **CTA pill** — `<a class="cta-pill" href="#">{brand.url} — {brand.cta}</a>`
-- **Bullet points** — body font, stacked with small gap, color from `layout.themes[theme].bottom_text`
+→ For image-using slide types (`captioned_image`, `full_frame_image`, `text_over_image`), see `references/image-sources.md` for source resolution (user / placeholder / generated / chart), the `images.yml` manifest, and brief-file conventions. Images normalize to local files `slide-NN-source.{ext}`; the HTML is source-agnostic.
 
 ## Step 6: Build the CTA Slide
 
@@ -303,19 +108,11 @@ When changing slide count, update:
 
 If `caption.enabled: true` in `.carousel.md`, generate a caption alongside the slides. The caption is a first-class deliverable — without it, the carousel can't be posted.
 
-→ See `references/caption-writing.md` for the full rules. The central principle: **the first ~125 characters must earn the reader's "... more" tap.** Everything else is secondary.
+Central principle: **the first ~125 characters must earn the reader's "... more" tap.** Everything else is secondary.
 
-**Process:**
-1. Load `references/caption-writing.md`.
-2. Draft a first line using one of the six opening patterns (story opener / counter-intuitive / specific intrigue / confession / specific observation / question-then-negated). Target `caption.hook_target_length` chars (default 80).
-3. Run the earned test: would a creator friend ask "what's this about?" if you sent them just the first line? If not, rewrite.
-4. Write the body (length per `caption.body_length`): deliver the hook's payoff → add context the slides couldn't fit → bridge to "why this matters for the reader."
-5. Add the engagement prompt. Match to the carousel's selected CTA action (`caption.engagement_style: auto` resolves to the action chosen in Step 6). No generic "let me know what you think!"
-6. Pull hashtags from `caption.hashtag_pools` (brand + topic + reach), mix per strategy, cap at `caption.hashtag_count`. Topic hashtags are skill-selected based on this carousel's content.
-7. Verify: total caption ≤ 2,200 chars, first ~125 chars stand alone, no anti-patterns (no greetings, no opening hashtags, no duplicating the slide 1 hook verbatim).
-8. Write to `{layout.output_dir}/YYMMDD-topic-slug/caption.md`.
+→ See `references/caption-writing.md` for the full process — opening patterns, body structure, engagement prompts matched to action, hashtag mix, anti-patterns to avoid.
 
-The caption.md lives alongside the HTML and (once exported) the PNGs. Human-readable — the user can edit before publishing.
+Output: `{layout.output_dir}/YYMMDD-topic-slug/caption.md` — human-readable, the user can edit before publishing.
 
 ## Step 8: Export Slide Images (MANDATORY)
 
@@ -362,7 +159,7 @@ The caption.md lives alongside the HTML and (once exported) the PNGs. Human-read
 
 ```
 ig-carousel/
-├── SKILL.md                      ← this file (construction only)
+├── SKILL.md                      ← this file (orchestrator only — no step-execution detail)
 ├── HANDOFF.md                    ← status + open handoffs
 ├── references/
 │   ├── strategy-selection.md     ← strategy table + Specificity Rule
@@ -370,13 +167,17 @@ ig-carousel/
 │   ├── structural-narratives.md  ← slide-by-slide arcs per strategy
 │   ├── action-playbooks.md       ← CTA slide playbooks per action type
 │   ├── caption-writing.md        ← IG caption craft — earn the "...more" tap
-│   └── slide-types.md            ← 8-type slide vocabulary (zones, CSS skeletons, when-to-pick)
+│   ├── slide-types.md            ← 8-type slide vocabulary (canonical YAML defaults + when-to-pick)
+│   ├── slide-build.md            ← Step 5 execution detail (themes, types, anatomy, CSS recipes, emphasis, variants)
+│   └── image-sources.md          ← image source resolution (user/placeholder/generated/chart) + manifest + briefs
 ├── templates/
 │   └── carousel-config.md        ← `.carousel.md` template for new projects
 ├── commands/
 │   ├── init-carousel.md          ← procedure to generate `.carousel.md` from DESIGN.md
 │   ├── sync-carousel.md          ← detect + fix drift between `.carousel.md` and DESIGN.md
 │   └── publish-carousel.md       ← publish an exported carousel to IG via Postiz
+├── agents/
+│   └── distill-source.md         ← subagent definition for long-source carousels (≥800-word articles, threads, transcripts)
 └── handoffs/
     └── image-generation.md       ← open handoff for image/chart slide support
 ```

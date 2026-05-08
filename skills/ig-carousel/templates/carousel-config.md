@@ -158,22 +158,40 @@ layout:
     - pill       # CTA pill (most common on last slide)
     - bullets    # stacked bullet points
 
-  # Slide-type vocabulary — which layouts this brand's carousels can use.
-  # `static_text_only` is always implicit (universal fallback). Brands
-  # declare which *additional* layouts the skill is allowed to pick from.
-  # Full spec: skills/ig-carousel/references/slide-types.md
+  # Slide-type vocabulary — which layouts this brand's carousels can use,
+  # and how each one is configured. `static_text_only` is always implicit
+  # (universal fallback) — but include it explicitly here if you want to
+  # customize its slot config or layout pattern.
   #
-  # Available types:
-  #   static_text_only           — label/headline/bottom (default, always enabled)
-  #   captioned_image            — label/image/caption
-  #   full_frame_image           — image fills slide, optional caption
-  #   text_over_image            — image background + overlaid headline
-  #   pull_quote                 — quote mark/quoted text/attribution
-  #   big_number                 — label/huge stat/context
-  #   side_by_side_comparison    — A/B columns + verdict
-  #   numbered_list              — label/numbered stack/context
+  # Each enabled type declares:
+  #   pattern: one of vertical_3_stack | grid_2col | full_bleed_corner | z_stacked
+  #            (skill ships these primitives; brands cannot invent new ones)
+  #   slots:   list of { class, position, type, ...field-specifics }
+  #            position values are constrained by the pattern
+  #
+  # Full spec + canonical defaults per type: references/slide-types.md
+  # Copy the canonical block from there and edit fields as needed.
+  #
+  # Available types: static_text_only, captioned_image, full_frame_image,
+  # text_over_image, pull_quote, big_number, side_by_side_comparison,
+  # numbered_list.
   slide_types_enabled:
-    - static_text_only
+    static_text_only:
+      pattern: vertical_3_stack
+      slots:
+        - { class: slide-label,    position: top,    type: label,    typography_role: label }
+        - { class: slide-headline, position: middle, type: headline, typography_role: headline, max_words: 25, emphasis: earned }
+        - { class: slide-bottom,   position: bottom, type: bottom,   variants: [stat, list, pill, bullets] }
+
+    # Uncomment + edit to enable additional types. See references/slide-types.md
+    # for canonical defaults you can paste in.
+    #
+    # captioned_image:
+    #   pattern: vertical_3_stack
+    #   slots:
+    #     - { class: slide-header, position: top,    type: text,  typography_role: headline, size_multiplier: 0.55, max_words: 14, emphasis: earned }
+    #     - { class: slide-image,  position: middle, type: image, aspect: "4/3", radius: 12px, shadow: "0 4px 16px rgba(0,0,0,0.18)" }
+    #     - { class: slide-footer, position: bottom, type: text,  typography_role: body,     size_multiplier: 0.65, max_words: 8,  emphasis: earned }
 
   # Strategy — how the skill picks slide types WITHIN a single carousel.
   # Only matters when more than one type is enabled.
@@ -192,12 +210,42 @@ layout:
   #   body: captioned_image
   #   alt: pull_quote
 
-  # Image sources — only relevant if any image-using types are enabled.
-  # Phase 1 supports `user` (paths provided per-slide). Phase 2: `local_library`.
-  images:
-    mode: optional               # never | optional | encouraged
-    sources:
-      - user
+# =====================================================================
+# IMAGES — how image-using slide types (captioned_image, full_frame_image,
+# text_over_image) resolve their visuals. Every source ultimately becomes
+# a local file slide-NN-source.{ext} in the carousel folder; the HTML
+# always references that path. Full spec: references/image-sources.md
+# =====================================================================
+images:
+  mode: optional                    # never | optional | encouraged
+  default_source: placeholder       # used when no signal favors another
+  source_priority:                  # resolution order for ambiguous slides
+    - user                          # always wins if user supplies one
+    - chart                         # signal: data viz / comparison
+    - generated                     # signal: photo / scene / illustration
+    - placeholder                   # fallback
+
+  sources:
+    user:
+      enabled: true
+      mechanisms: [per_prompt, filename_convention]
+
+    placeholder:
+      enabled: true
+      provider: picsum              # picsum | solid | gradient
+      seed_strategy: deterministic  # stable per slide; re-exports are identical
+      brief_files: true             # write slide-NN-brief.md alongside placeholder
+
+    generated:
+      enabled: false                # opt-in; costs $$
+      provider: nano-banana         # nano-banana | midjourney | dall-e
+      style_prompt: "editorial photo, natural light, no text"
+      api_key_env: NANO_BANANA_API_KEY
+      cache: true                   # don't re-bill on re-export
+
+    chart:
+      enabled: false                # likely promoted to its own slide type
+      style: brand-tokens
 
 # =====================================================================
 # CAPTION — every carousel ships with a caption generated alongside
