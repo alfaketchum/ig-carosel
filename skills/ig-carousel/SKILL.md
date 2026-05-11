@@ -163,6 +163,7 @@ ig-carousel/
 ├── HANDOFF.md                    ← status + open handoffs
 ├── references/
 │   ├── strategy-selection.md     ← strategy table + Specificity Rule
+│   ├── strategy-suggestion.md    ← swipe-only: propose a new strategy when none of the 9 fit a swiped reference carousel (psychological lens, mechanism inventory, slide arc design)
 │   ├── hook-formulas.md          ← hook format, psychology, rules, formulas by strategy
 │   ├── structural-narratives.md  ← slide-by-slide arcs per strategy
 │   ├── action-playbooks.md       ← CTA slide playbooks per action type
@@ -175,7 +176,8 @@ ig-carousel/
 ├── commands/
 │   ├── init-carousel.md          ← procedure to generate `.carousel.md` from DESIGN.md
 │   ├── sync-carousel.md          ← detect + fix drift between `.carousel.md` and DESIGN.md
-│   └── publish-carousel.md       ← publish an exported carousel to IG via Postiz
+│   ├── publish-carousel.md       ← publish an exported carousel to IG via Postiz
+│   └── swipe-carousel.md         ← capture a public reference carousel for repurposing study (with credit attribution)
 ├── agents/
 │   └── distill-source.md         ← subagent definition for long-source carousels (≥800-word articles, threads, transcripts)
 └── handoffs/
